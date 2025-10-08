@@ -1,0 +1,12 @@
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  cert-*,
+  bugprone-*,
+  concurrency-*,
+  misc-*,
+  portability-*,
+  readability-*,
+  performance-*,
+  modernize-*,
+FormatStyle: file

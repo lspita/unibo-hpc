@@ -1,0 +1,8 @@
+# direnv
+/.direnv/
+/.envrc*
+
+# cmake
+/bin/
+/.clangd
+/Makefile

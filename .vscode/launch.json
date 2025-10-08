@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CMake LLDB Debug",
+            "type": "lldb-dap",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "cwd": "${workspaceFolder}",
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "CTest LLDB Debug",
+            "type": "lldb-dap",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "cwd": "${cmake.testWorkingDirectory}",
+            "program": "${cmake.testProgram}",
+            "args": [
+                "${cmake.testArgs}"
+            ],
+        }
+    ]
+}

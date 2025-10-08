@@ -1,0 +1,108 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 24,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "bin/${presetName}",
+            "cacheVariables": {
+                "CMAKE_PRESET": "${presetName}"
+            }
+        },
+        {
+            "name": "clang",
+            "inherits": [
+                "base"
+            ],
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "gcc",
+            "inherits": [
+                "base"
+            ],
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "msvc",
+            "inherits": [
+                "base"
+            ],
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl.exe",
+                "CMAKE_CXX_COMPILER": "cl.exe"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "verbose": true,
+            "inheritConfigureEnvironment": true
+        },
+        {
+            "name": "clang",
+            "inherits": [
+                "base"
+            ],
+            "configurePreset": "clang"
+        },
+        {
+            "name": "gcc",
+            "inherits": [
+                "base"
+            ],
+            "configurePreset": "gcc"
+        },
+        {
+            "name": "msvc",
+            "inherits": [
+                "base"
+            ],
+            "configurePreset": "msvc"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "inheritConfigureEnvironment": true,
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "clang",
+            "inherits": [
+                "base"
+            ],
+            "configurePreset": "clang"
+        },
+        {
+            "name": "gcc",
+            "inherits": [
+                "base"
+            ],
+            "configurePreset": "gcc"
+        },
+        {
+            "name": "msvc",
+            "inherits": [
+                "base"
+            ],
+            "configurePreset": "msvc"
+        }
+    ]
+}
