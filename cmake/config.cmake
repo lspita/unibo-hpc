@@ -25,7 +25,3 @@ if (MSVC)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
-
-if (NOT MSVC)
-    target_link_libraries(${PROJECT_LIB} PUBLIC m) # add math library
-endif()

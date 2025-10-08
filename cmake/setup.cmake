@@ -16,10 +16,9 @@ Variables:
 - CLANG_TIDY (string, default=clang-tidy) clang tidy executable, unset to stop using clang tidy
 ]]#
 
-set(PROJECT_NAME cxx-project-template)
+set(PROJECT_NAME unibo-hpc)
 set(PROJECT_VERSION 0.1.0)
-set(PROJECT_DESCRIPTION "C/C++ project template")
-set(PROJECT_HOMEPAGE_URL https://github.com/lspita/cxx-project-template)
+set(PROJECT_DESCRIPTION "High-Performance Computing course @ Computer Science and Engineering, UniBo, Cesena Campus")
+set(PROJECT_HOMEPAGE_URL https://github.com/lspita/unibo-hpc)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 17)
