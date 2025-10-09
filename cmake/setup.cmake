@@ -4,7 +4,6 @@ Required:
 
 Variables:
 - PROJECT_LANGUAGES (list, default=C CXX) project LANGUAGES property value
-- SOURCES_EXTENSIONS (list, default=c cpp cxx cc) list of possible file extensions for source files
 - EXEC_SOURCE_NAME (string, default=main) name of sources that become executables (without file extension) 
 - SRC_DIR (string, default=src) sources directory
 - INCLUDE_DIR (string, default=include) public include directory

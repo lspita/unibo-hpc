@@ -7,7 +7,6 @@ function(set_default var val)
 endfunction()
 
 set(PROJECT_LANGUAGES C CXX)
-set(SOURCES_EXTENSIONS c cpp cc cxx)
 set(EXEC_SOURCE_NAME main)
 set(SRC_DIR src)
 set(INCLUDE_DIR include)
@@ -115,8 +114,10 @@ endfunction()
 project("${PROJECT_NAME}" LANGUAGES ${PROJECT_LANGUAGES})
 
 # explicit includes needed for nix
+set(SOURCES_EXTENSIONS)
 foreach(lang IN LISTS PROJECT_LANGUAGES)
     set(CMAKE_${lang}_STANDARD_INCLUDE_DIRECTORIES ${CMAKE_${lang}_IMPLICIT_INCLUDE_DIRECTORIES})
+    list(APPEND SOURCES_EXTENSIONS ${CMAKE_${lang}_SOURCE_FILE_EXTENSIONS})
 endforeach()
 
 # generate compile_commands.json
