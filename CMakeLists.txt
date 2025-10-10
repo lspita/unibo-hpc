@@ -20,12 +20,6 @@ set_default(CMAKE_BUILD_TYPE Debug)
 
 include("${CMAKE_DIR}/setup.cmake")
 
-set_default(ROOT_TARGET_NAME "${PROJECT_NAME}")
-if(CLANG_TIDY)
-    set(CMAKE_C_CLANG_TIDY ${CLANG_TIDY})
-    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
-endif()
-
 function(get_arg index outvar default _argn)
     set(opts ${_argn})
     list(LENGTH opts n)
@@ -36,11 +30,6 @@ function(get_arg index outvar default _argn)
     endif()
     set(${outvar} "${val}" PARENT_SCOPE)
 endfunction()
-
-set(EXEC_SOURCE_NAMES_LIST)
-foreach(ext IN LISTS SOURCES_EXTENSIONS)
-    list(APPEND EXEC_SOURCE_NAMES_LIST "${EXEC_SOURCE_NAME}.${ext}")
-endforeach()
 
 function(abs_path outvar path)
     set(${outvar} "${CMAKE_SOURCE_DIR}/${path}" PARENT_SCOPE)
@@ -113,11 +102,16 @@ endfunction()
 # create project
 project("${PROJECT_NAME}" LANGUAGES ${PROJECT_LANGUAGES})
 
-# explicit includes needed for nix
 set(SOURCES_EXTENSIONS)
 foreach(lang IN LISTS PROJECT_LANGUAGES)
+    # explicit includes needed for nix
     set(CMAKE_${lang}_STANDARD_INCLUDE_DIRECTORIES ${CMAKE_${lang}_IMPLICIT_INCLUDE_DIRECTORIES})
     list(APPEND SOURCES_EXTENSIONS ${CMAKE_${lang}_SOURCE_FILE_EXTENSIONS})
+endforeach()
+
+set(EXEC_SOURCE_NAMES_LIST)
+foreach(ext IN LISTS SOURCES_EXTENSIONS)
+    list(APPEND EXEC_SOURCE_NAMES_LIST "${EXEC_SOURCE_NAME}.${ext}")
 endforeach()
 
 # generate compile_commands.json
@@ -220,4 +214,3 @@ foreach(template_file IN LISTS TEMPLATE_FILES)
     abs_path(template_name_abs "${template_name}")
     configure_file(${template_file} ${template_name_abs} @ONLY)
 endforeach()
-

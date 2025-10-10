@@ -5,6 +5,9 @@
     "yaml.schemas": {
         "https://json.schemastore.org/clang-tidy.json": [
             ".clang-tidy"
+        ],
+        "https://www.schemastore.org/clang-format.json": [
+            ".clang-format"
         ]
     },
     "cmake.ctest.testSuiteDelimiter": "/",

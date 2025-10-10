@@ -32,6 +32,15 @@
               gdb
               glibc
               libcxx
+              # OpenCL
+              ocl-icd
+              opencl-headers
+              # OpenMP (clang)
+              llvmPackages.openmp
+              # X11
+              libx11
+              # mpi
+              mpi
             ];
           };
       }

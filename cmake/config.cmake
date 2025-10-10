@@ -25,3 +25,29 @@ if (MSVC)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+
+find_package(OpenMP REQUIRED)
+find_package(X11 REQUIRED)
+find_package(MPI REQUIRED)
+find_package(OpenCL REQUIRED)
+target_link_libraries(${PROJECT_LIB} PRIVATE
+    OpenMP::OpenMP_C
+    X11::X11
+    MPI::MPI_C
+    OpenCL::OpenCL
+)
+
+set(HPC_ROOT ${LIB_DIR}/HPC2526)
+set_source_files_properties(${HPC_ROOT}/matmul-test.c PROPERTIES 
+    COMPILE_FLAGS "-mavx2 -mfma"
+)
+
+set(PREVENT_COMPILE_SOURCES
+    ${HPC_ROOT}/omp-bug1.c
+    ${HPC_ROOT}/omp-bug2.c
+    ${HPC_ROOT}/omp-bug3.c
+)
+foreach(source IN LISTS PREVENT_COMPILE_SOURCES)
+    set_source_files_properties(${source} PROPERTIES HEADER_FILE_ONLY ON)
+endforeach()
+

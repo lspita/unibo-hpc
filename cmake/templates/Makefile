@@ -13,7 +13,7 @@ CMAKE_SILENT_FLAG := -s
 RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 $(eval $(RUN_ARGS):;@:)
 
-default_target: run
+default_target: build
 
 build: $(BIN_DIR)
 	$(CMAKE) --build $(PRESET_FLAG) -- $(CMAKE_SILENT_FLAG)
