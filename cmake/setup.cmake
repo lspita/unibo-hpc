@@ -3,7 +3,7 @@ Required:
 - PROJECT_NAME (string) project name
 
 Variables:
-- PROJECT_LANGUAGES (list, default=C CXX) project LANGUAGES property value
+- PROJECT_LANGUAGES (list, default=C CXX) languages to enable
 - EXEC_SOURCE_NAME (string, default=main) name of sources that become executables (without file extension) 
 - SRC_DIR (string, default=src) sources directory
 - INCLUDE_DIR (string, default=include) public include directory
