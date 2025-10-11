@@ -5,8 +5,6 @@ CMAKE := cmake
 CTEST := ctest
 PRESET_FLAG := --preset @CMAKE_PRESET@
 
-TARGET ?= @EXEC_SOURCE_NAME@
-
 CMAKE_SILENT_FLAG := -s
 
 # Capture additional arguments
