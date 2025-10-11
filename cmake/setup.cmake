@@ -3,7 +3,6 @@ Required:
 - PROJECT_NAME (string) project name
 
 Variables:
-- PROJECT_LANGUAGES (list, default=C CXX) languages to enable
 - EXEC_SOURCE_NAME (string, default=main) name of sources that become executables (without file extension) 
 - SRC_DIR (string, default=src) sources directory
 - INCLUDE_DIR (string, default=include) public include directory
@@ -19,6 +18,8 @@ set(PROJECT_NAME unibo-hpc)
 set(PROJECT_VERSION 0.1.0)
 set(PROJECT_DESCRIPTION "High-Performance Computing course @ Computer Science and Engineering, UniBo, Cesena Campus")
 set(PROJECT_HOMEPAGE_URL https://github.com/lspita/unibo-hpc)
-set(PROJECT_LANGUAGES C CXX)
+enable_language(C)
+enable_language(CXX)
+enable_language(CUDA)
 
 set(CMAKE_C_STANDARD 99)

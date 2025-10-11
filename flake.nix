@@ -26,17 +26,14 @@
               nil
               nixfmt
               # c/c++
+              stdenv
               gnumake
               cmake
               gcc
+              gdb
               clang-tools # must be before clang to have the correct clangd in PATH
               clang
               lldb
-              gdb
-              glibc
-              libcxx
-              # cuda
-              cudaPackages.cudatoolkit
               # opencl
               ocl-icd
               opencl-headers
@@ -46,6 +43,9 @@
               libx11
               # mpi
               mpi
+              # cuda
+              cudaPackages.cudatoolkit
+              cudaPackages.cuda_cudart
             ];
           };
       }

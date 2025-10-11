@@ -6,7 +6,6 @@ function(set_default var val)
     endif()
 endfunction()
 
-set(PROJECT_LANGUAGES C CXX)
 set(EXEC_SOURCE_NAME main)
 set(SRC_DIR src)
 set(INCLUDE_DIR include)
@@ -101,6 +100,7 @@ endfunction()
 
 # create project
 project("${PROJECT_NAME}")
+get_property(PROJECT_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 
 set(SOURCES_EXTENSIONS)
 foreach(lang IN LISTS PROJECT_LANGUAGES)
