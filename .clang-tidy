@@ -9,4 +9,5 @@ Checks: >
   readability-*,
   performance-*,
   modernize-*,
+  -readability-identifier-length,
 FormatStyle: file
