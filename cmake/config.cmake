@@ -30,6 +30,7 @@ find_package(OpenMP REQUIRED)
 find_package(X11 REQUIRED)
 find_package(MPI REQUIRED)
 find_package(OpenCL REQUIRED)
+find_package(CUDAToolkit)
 target_link_libraries(${PROJECT_LIB} PRIVATE
     OpenMP::OpenMP_C
     X11::X11

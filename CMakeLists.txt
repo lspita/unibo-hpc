@@ -100,13 +100,12 @@ function(main_sources outvar dir)
 endfunction()
 
 # create project
-project("${PROJECT_NAME}" LANGUAGES ${PROJECT_LANGUAGES})
+project("${PROJECT_NAME}")
 
 set(SOURCES_EXTENSIONS)
 foreach(lang IN LISTS PROJECT_LANGUAGES)
-    # explicit includes needed for nix
-    set(CMAKE_${lang}_STANDARD_INCLUDE_DIRECTORIES ${CMAKE_${lang}_IMPLICIT_INCLUDE_DIRECTORIES})
     list(APPEND SOURCES_EXTENSIONS ${CMAKE_${lang}_SOURCE_FILE_EXTENSIONS})
+    enable_language(${lang})
 endforeach()
 
 set(EXEC_SOURCE_NAMES_LIST)

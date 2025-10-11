@@ -11,7 +11,10 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
       in
       {
         devShell =
@@ -25,19 +28,21 @@
               # c/c++
               gnumake
               cmake
-              clang
               gcc
-              clang-tools
+              clang-tools # must be before clang to have the correct clangd in PATH
+              clang
               lldb
               gdb
               glibc
               libcxx
-              # OpenCL
+              # cuda
+              cudaPackages.cudatoolkit
+              # opencl
               ocl-icd
               opencl-headers
-              # OpenMP (clang)
+              # openmp (clang)
               llvmPackages.openmp
-              # X11
+              # x11
               libx11
               # mpi
               mpi
