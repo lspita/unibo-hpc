@@ -3,14 +3,14 @@ Required:
 - PROJECT_NAME (string) project name
 
 Variables:
-- EXEC_SOURCE_NAME (string, default=main) name of sources that become executables (without file extension) 
 - SRC_DIR (string, default=src) sources directory
 - INCLUDE_DIR (string, default=include) public include directory
 - LIB_DIR (string, default=lib) external lib files
+- EXEC_PATTERNS (list, default=main) list of patterns matching sources that are executables (without last file extension)
+- TEST_PATTERNS (list, default=*.test) list of patterns matching sources that are tests (without last file extension)
 - TARGETS_DIR (string, default=targets) binary directory relative path containing all targets
 - CMAKE_DIR (string, default=cmake) cmake config files directory
 - CMAKE_TEMPLATES_DIR (string, default=cmake) CMAKE_DIR subdirectory containing template files
-- TEST_EXTRA_EXT (string, default=test) extra file extension for tests (es. test -> mytest.test.c)
 - CLANG_TIDY (string, default=clang-tidy) clang tidy executable, unset to stop using clang tidy
 ]]#
 
