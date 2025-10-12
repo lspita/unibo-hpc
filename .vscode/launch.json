@@ -18,7 +18,9 @@
       "preLaunchTask": "build",
       "cwd": "${cmake.testWorkingDirectory}",
       "program": "${cmake.testProgram}",
-      "args": ["${cmake.testArgs}"]
+      "args": [
+        "${cmake.testArgs}"
+      ]
     }
   ]
 }
