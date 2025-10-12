@@ -143,7 +143,10 @@ function(make_executable outexe outid outpath filepath)
     get_filename_component(filename "${filepath}" NAME)
     get_filename_component(exename "${filepath}" NAME_WLE)
     get_filename_component(exedir "${filepath}" DIRECTORY)
-    if ("${filepath}" IN_LIST MAIN_SOURCES AND NOT "${exedir}" STREQUAL ${SRC_DIR_ABS})
+    if (
+        "${filepath}" IN_LIST MAIN_SOURCES AND
+        NOT "${exedir}" STREQUAL ${SRC_DIR_ABS}
+    )
         get_filename_component(exename "${exedir}" NAME)
         get_filename_component(exedir "${exedir}" DIRECTORY)
     endif()
@@ -158,13 +161,14 @@ function(make_executable outexe outid outpath filepath)
     # https://cmake.org/cmake/help/latest/manual/cmake-properties.7.html#target-properties
     src_path(bindir "${exedir}")
     set(bindir "${TARGETS_DIR_ABS}/${bindir}")
-    set_target_properties(${exeid} PROPERTIES 
+    set_target_properties(
+        ${exeid} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${bindir}
         OUTPUT_NAME ${exename}
     )
-    set(${outexe} ${${exeid}} PARENT_SCOPE) 
+    set(${outexe} ${${exeid}} PARENT_SCOPE)
     set(${outid} ${exeid} PARENT_SCOPE)
-    set(${outpath} ${exepath} PARENT_SCOPE) 
+    set(${outpath} ${exepath} PARENT_SCOPE)
 endfunction()
 
 # create main executables

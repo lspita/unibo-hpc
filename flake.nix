@@ -25,9 +25,11 @@
               nixd
               nil
               nixfmt
-              # c/c++
+              # cmake
               gnumake
               cmake
+              neocmakelsp
+              # c/c++
               gcc
               gdb
               clang-tools # must be before clang to have the correct clangd in PATH
