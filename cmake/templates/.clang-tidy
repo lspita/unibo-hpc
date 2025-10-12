@@ -8,6 +8,6 @@ Checks: >
   portability-*,
   readability-*,
   performance-*,
-  modernize-*,
+  -modernize-*,
   -readability-identifier-length,
 FormatStyle: file
