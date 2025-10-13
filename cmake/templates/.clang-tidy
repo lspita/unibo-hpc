@@ -10,4 +10,6 @@ Checks: >
   performance-*,
   -modernize-*,
   -readability-identifier-length,
+  -misc-use-internal-linkage,
+  -misc-static-assert,
 FormatStyle: file
