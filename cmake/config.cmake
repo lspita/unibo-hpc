@@ -36,6 +36,7 @@ target_link_libraries(${PROJECT_LIB} PRIVATE
     X11::X11
     MPI::MPI_C
     OpenCL::OpenCL
+    CUDA::cudart
 )
 
 set(HPC_ROOT ${LIB_DIR}/HPC2526)

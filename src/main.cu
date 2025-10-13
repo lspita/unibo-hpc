@@ -19,9 +19,18 @@
  *
  ****************************************************************************/
 
+#include <stdint.h>
 #include <stdio.h>
+
+namespace {
+__global__ void ker() {
+  const uint32_t id = threadIdx.x;
+  printf("Thread ID: %u\n", id);
+}
+}  // namespace
 
 int main(void) {
   printf("Hello, world!\n");
+  ker<<<1, 1>>>();
   return 0;
 }
