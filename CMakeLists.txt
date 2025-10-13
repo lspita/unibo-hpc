@@ -107,10 +107,10 @@ check_exists(${SRC_DIR_ABS})
 check_isdir(${SRC_DIR_ABS})
 
 # get source files
-find_sources(MAIN_SOURCES ${SRC_DIR_ABS} ${EXEC_PATTERNS})
 find_sources(SRC_SOURCES ${SRC_DIR_ABS})
+find_sources(EXEC_SOURCES ${SRC_DIR_ABS} ${EXEC_PATTERNS})
 find_sources(TEST_SOURCES ${SRC_DIR_ABS} ${TEST_PATTERNS})
-list(REMOVE_ITEM SRC_SOURCES ${MAIN_SOURCES})
+list(REMOVE_ITEM SRC_SOURCES ${EXEC_SOURCES})
 list(REMOVE_ITEM SRC_SOURCES ${TEST_SOURCES})
 list(APPEND PROJECT_SOURCES ${SRC_SOURCES})
 
@@ -144,7 +144,7 @@ function(make_executable outexe outid outpath filepath)
     get_filename_component(exename "${filepath}" NAME_WLE)
     get_filename_component(exedir "${filepath}" DIRECTORY)
     if (
-        "${filepath}" IN_LIST MAIN_SOURCES AND
+        "${filepath}" IN_LIST EXEC_SOURCES AND
         NOT "${exedir}" STREQUAL ${SRC_DIR_ABS}
     )
         get_filename_component(exename "${exedir}" NAME)
@@ -158,9 +158,9 @@ function(make_executable outexe outid outpath filepath)
     if (${link_lib})
         target_link_libraries(${exeid} PRIVATE ${PROJECT_LIB})
     endif()
-    # https://cmake.org/cmake/help/latest/manual/cmake-properties.7.html#target-properties
     src_path(bindir "${exedir}")
     set(bindir "${TARGETS_DIR_ABS}/${bindir}")
+    # https://cmake.org/cmake/help/latest/manual/cmake-properties.7.html#target-properties
     set_target_properties(
         ${exeid} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${bindir}
@@ -172,8 +172,8 @@ function(make_executable outexe outid outpath filepath)
 endfunction()
 
 # create main executables
-foreach(main_source IN LISTS MAIN_SOURCES)
-    make_executable(mainexe mainid mainpath ${main_source})
+foreach(exec_source IN LISTS EXEC_SOURCES)
+    make_executable(mainexe mainid mainpath ${exec_source})
 endforeach()
 
 # enable testing
