@@ -22,4 +22,8 @@ enable_language(C)
 enable_language(CXX)
 enable_language(CUDA)
 
+foreach(lang C CXX)
+    set(CMAKE_${lang}_HOST_COMPILER ${CMAKE_${lang}_COMPILER})
+endforeach()
+
 set(CMAKE_C_STANDARD 99)
