@@ -83,8 +83,13 @@ For example, if you want to use two OpenMP threads:
 
 #include <assert.h>
 #include <omp.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define DEFAULT_MATRIX_SIZE ((long)(10 * 1024) * 1024L)
+#define MAX_MATRIX_SIZE ((long)(512 * 1024) * 1024L)
+#define DOT_FUNCTION dot_omp_for
 
 void fill(int* v1, int* v2, size_t n) {
   const int seq1[3] = {3, 7, 18};
@@ -95,9 +100,26 @@ void fill(int* v1, int* v2, size_t n) {
   }
 }
 
-int dot(const int* v1, const int* v2, size_t n) {
-  /* [TODO] Parallelize the following loop */
+int dot_omp_parallel(const int* v1, const int* v2, const size_t n) {
+  printf("Calculating with omp parallel block\n");
   int result = 0;
+#pragma omp parallel default(none) shared(n, v1, v2) reduction(+ : result)
+  {
+    const int id = omp_get_thread_num();
+    const int num_threads = omp_get_num_threads();
+    const size_t start = (n * id) / num_threads;
+    const size_t end = (n * (id + 1)) / num_threads;
+    for (size_t i = start; i < end; i++) {
+      result += v1[i] * v2[i];
+    }
+  }
+  return result;
+}
+
+int dot_omp_for(const int* v1, const int* v2, const size_t n) {
+  printf("Calculating with omp parallel for\n");
+  int result = 0;
+#pragma omp parallel for default(none) shared(n, v1, v2) reduction(+ : result)
   for (size_t i = 0; i < n; i++) {
     result += v1[i] * v2[i];
   }
@@ -105,23 +127,23 @@ int dot(const int* v1, const int* v2, size_t n) {
 }
 
 int main(int argc, char* argv[]) {
-  size_t n = 10 * 1024 * 1024l;            /* array length */
-  const size_t n_max = 512 * 1024 * 1024l; /* max length */
-  int *v1, *v2;
+  int* v1;
+  int* v2;
 
   if (argc > 2) {
     fprintf(stderr, "Usage: %s [n]\n", argv[0]);
     return EXIT_FAILURE;
   }
 
+  size_t n = DEFAULT_MATRIX_SIZE; /* array length */
   if (argc > 1) {
     n = atol(argv[1]);
   }
 
-  if (n > n_max) {
+  if (n > MAX_MATRIX_SIZE) {
     fprintf(stderr,
             "FATAL: Array too long (requested length=%lu, maximum length=%lu\n",
-            (unsigned long)n, (unsigned long)n_max);
+            (unsigned long)n, (unsigned long)MAX_MATRIX_SIZE);
     return EXIT_FAILURE;
   }
 
@@ -135,7 +157,7 @@ int main(int argc, char* argv[]) {
   const int expect = (n % 3 == 0 ? 0 : 36);
 
   const double tstart = omp_get_wtime();
-  const int result = dot(v1, v2, n);
+  const int result = DOT_FUNCTION(v1, v2, n);
   const double elapsed = omp_get_wtime() - tstart;
 
   if (result == expect) {
