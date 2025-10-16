@@ -1,4 +1,6 @@
 {
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "clangd.enable": true,
     "yaml.schemas": {
         "https://json.schemastore.org/clang-tidy.json": [
             ".clang-tidy"
