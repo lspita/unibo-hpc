@@ -9,6 +9,7 @@ Checks: >
   readability-*,
   performance-*,
   -modernize-*,
+  -cert-*,
   -readability-identifier-length,
   -misc-use-internal-linkage,
   -misc-static-assert,

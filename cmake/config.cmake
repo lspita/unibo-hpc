@@ -20,18 +20,12 @@ Targets are located under bin/<preset>/out
 - test targets are named <file basename>.<TEST_EXTRA_EXT>
 ]]#
 
-if (MSVC)
-    add_compile_options(/W4)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-
 find_package(OpenMP REQUIRED)
 find_package(X11 REQUIRED)
 find_package(MPI REQUIRED)
 find_package(OpenCL REQUIRED)
 find_package(CUDAToolkit REQUIRED)
-target_link_libraries(${PROJECT_LIB} PRIVATE
+target_link_libraries(${PROJECT_LIB} PUBLIC
     OpenMP::OpenMP_C
     X11::X11
     MPI::MPI_C

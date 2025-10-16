@@ -27,3 +27,10 @@ foreach(lang C CXX)
 endforeach()
 
 set(CMAKE_C_STANDARD 99)
+
+
+if (MSVC)
+    add_compile_options(/W4)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
