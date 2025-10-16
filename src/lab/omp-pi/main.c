@@ -123,6 +123,8 @@ OpenMP threads and $N=20000$ points:
 ***/
 
 /* The rand_r() function is available only if _XOPEN_SOURCE=600 */
+#include <assert.h>
+#include <stddef.h>
 #if _XOPEN_SOURCE < 600
 #define _XOPEN_SOURCE 600
 #endif
@@ -131,31 +133,77 @@ OpenMP threads and $N=20000$ points:
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEFAULT_N_POINTS 10000
+#define GENERATE_POINTS_FUNCTION generate_points_reduction
+
+unsigned int random_seed(const int id) {
+  // NOLINTNEXTLINE(readability-magic-numbers) deterministic number sequences
+  return 17 + (19 * id);
+}
+
 /* Generate `n` random points within the square with corners (-1, -1),
    (1, 1); return the number of points that fall inside the circle
    centered ad the origin with radius 1. */
 unsigned int generate_points(unsigned int n) {
-  /* [TODO] parallelize the body of this function */
+  const int P = omp_get_max_threads();
+  unsigned int* const inside = (unsigned int*)calloc(P, sizeof(unsigned int));
+
+#pragma omp parallel
+  {
+    const int thread_id = omp_get_thread_num();
+    const int num_threads =
+        omp_get_num_threads();  // get real number of threads
+    const size_t start = (n * thread_id) / num_threads;
+    const size_t end = (n * (thread_id + 1)) / num_threads;
+
+    unsigned int n_inside = 0;
+    /* The C function `rand()` is not thread-safe, since it modifies a
+       global seed; therefore, it can not be used inside a parallel
+       region. We use `rand_r()` with an explicit per-thread
+       seed. However, this means that in general the result computed
+       by this program depends on the number of threads. */
+
+    unsigned int my_seed = random_seed(thread_id);
+    for (size_t i = start; i < end; i++) {
+      /* Generate two random values in the range [-1, 1] */
+      const double x = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
+      const double y = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
+      if ((x * x) + (y * y) <= 1.0) {
+        n_inside++;
+      }
+    }
+    inside[thread_id] = n_inside;
+  }
+  unsigned int sum = 0;
+  for (int i = 0; i < P; i++) {
+    sum += inside[i];
+  }
+  free(inside);
+  return sum;
+}
+
+unsigned int generate_points_reduction(unsigned int n) {
   unsigned int n_inside = 0;
-  /* The C function `rand()` is not thread-safe, since it modifies a
-     global seed; therefore, it can not be used inside a parallel
-     region. We use `rand_r()` with an explicit per-thread
-     seed. However, this means that in general the result computed
-     by this program depends on the number of threads. */
-  unsigned int my_seed = 17 + 19 * omp_get_thread_num();
-  for (int i = 0; i < n; i++) {
-    /* Generate two random values in the range [-1, 1] */
-    const double x = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
-    const double y = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
-    if (x * x + y * y <= 1.0) {
-      n_inside++;
+#pragma omp parallel
+  {
+    const int thread_id = omp_get_thread_num();
+    // NOLINTNEXTLINE(readability-magic-numbers) deterministic number sequences
+    unsigned int my_seed = random_seed(thread_id);
+#pragma omp for reduction(+ : n_inside)
+    for (size_t i = 0; i < n; i++) {
+      /* Generate two random values in the range [-1, 1] */
+      const double x = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
+      const double y = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
+      if ((x * x) + (y * y) <= 1.0) {
+        n_inside++;
+      }
     }
   }
   return n_inside;
 }
 
 int main(int argc, char* argv[]) {
-  unsigned int n_points = 10000;
+  unsigned int n_points = DEFAULT_N_POINTS;
   unsigned int n_inside;
   const double PI_EXACT = 3.14159265358979323846;
 
@@ -170,7 +218,7 @@ int main(int argc, char* argv[]) {
 
   printf("Generating %u points...\n", n_points);
   const double tstart = omp_get_wtime();
-  n_inside = generate_points(n_points);
+  n_inside = GENERATE_POINTS_FUNCTION(n_points);
   const double elapsed = omp_get_wtime() - tstart;
   const double pi_approx = 4.0 * n_inside / (double)n_points;
   printf("PI approximation %f, exact %f, error %f%%\n", pi_approx, PI_EXACT,
