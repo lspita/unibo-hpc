@@ -89,7 +89,8 @@ For example, if you want to use two OpenMP threads:
 
 #define DEFAULT_MATRIX_SIZE ((long)(10 * 1024) * 1024L)
 #define MAX_MATRIX_SIZE ((long)(512 * 1024) * 1024L)
-#define DOT_FUNCTION dot_omp_for
+
+typedef int (*dot_function_t)(const int*, const int*, size_t);
 
 void fill(int* v1, int* v2, size_t n) {
   const int seq1[3] = {3, 7, 18};
@@ -100,8 +101,17 @@ void fill(int* v1, int* v2, size_t n) {
   }
 }
 
+int dot(const int* v1, const int* v2, size_t n) {
+  puts("Dot product: serial");
+  int result = 0;
+  for (size_t i = 0; i < n; i++) {
+    result += v1[i] * v2[i];
+  }
+  return result;
+}
+
 int dot_omp_parallel(const int* v1, const int* v2, const size_t n) {
-  printf("Calculating with omp parallel block\n");
+  puts("Dot product: parallel standard");
   int result = 0;
 #pragma omp parallel default(none) shared(n, v1, v2) reduction(+ : result)
   {
@@ -117,7 +127,7 @@ int dot_omp_parallel(const int* v1, const int* v2, const size_t n) {
 }
 
 int dot_omp_for(const int* v1, const int* v2, const size_t n) {
-  printf("Calculating with omp parallel for\n");
+  puts("Dot product: parallel for");
   int result = 0;
 #pragma omp parallel for default(none) shared(n, v1, v2) reduction(+ : result)
   for (size_t i = 0; i < n; i++) {
@@ -147,27 +157,35 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  printf("Initializing array of length %lu\n", (unsigned long)n);
-  v1 = (int*)malloc(n * sizeof(v1[0]));
-  assert(v1 != NULL);
-  v2 = (int*)malloc(n * sizeof(v2[0]));
-  assert(v2 != NULL);
-  fill(v1, v2, n);
-
   const int expect = (n % 3 == 0 ? 0 : 36);
+  dot_function_t dot_functions[] = {
+      dot,
+      dot_omp_parallel,
+      dot_omp_for,
+  };
+  const size_t dot_functions_n = sizeof(dot_functions) / sizeof(dot_function_t);
 
-  const double tstart = omp_get_wtime();
-  const int result = DOT_FUNCTION(v1, v2, n);
-  const double elapsed = omp_get_wtime() - tstart;
-
-  if (result == expect) {
-    printf("Test OK\n");
-  } else {
-    printf("Test FAILED: expected %d, got %d\n", expect, result);
+  for (size_t i = 0; i < dot_functions_n; i++) {
+    puts("=== START ===");
+    printf("Initializing array of length %lu\n", (unsigned long)n);
+    v1 = (int*)malloc(n * sizeof(v1[0]));
+    assert(v1 != NULL);
+    v2 = (int*)malloc(n * sizeof(v2[0]));
+    assert(v2 != NULL);
+    fill(v1, v2, n);
+    const double tstart = omp_get_wtime();
+    const int result = dot_functions[i](v1, v2, n);
+    const double elapsed = omp_get_wtime() - tstart;
+    if (result == expect) {
+      printf("Test OK\n");
+    } else {
+      printf("Test FAILED: expected %d, got %d\n", expect, result);
+    }
+    printf("Execution time %.3f\n", elapsed);
+    free(v1);
+    free(v2);
+    puts("=== END ===");
   }
-  printf("Execution time %.3f\n", elapsed);
-  free(v1);
-  free(v2);
 
   return EXIT_SUCCESS;
 }
