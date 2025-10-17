@@ -11,6 +11,7 @@ Checks: >
   -modernize-*,
   -cert-*,
   -readability-identifier-length,
+  -readability-uppercase-literal-suffix,
   -misc-use-internal-linkage,
   -misc-static-assert,
 FormatStyle: file

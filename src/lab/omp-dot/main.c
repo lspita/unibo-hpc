@@ -102,7 +102,7 @@ void fill(int* v1, int* v2, size_t n) {
 }
 
 int dot(const int* v1, const int* v2, size_t n) {
-  puts("Dot product: serial");
+  puts("dot product: serial");
   int result = 0;
   for (size_t i = 0; i < n; i++) {
     result += v1[i] * v2[i];
@@ -110,8 +110,8 @@ int dot(const int* v1, const int* v2, size_t n) {
   return result;
 }
 
-int dot_omp_parallel(const int* v1, const int* v2, const size_t n) {
-  puts("Dot product: parallel standard");
+int dot_parallel(const int* v1, const int* v2, const size_t n) {
+  puts("dot product: parallel standard");
   int result = 0;
 #pragma omp parallel default(none) shared(n, v1, v2) reduction(+ : result)
   {
@@ -126,8 +126,8 @@ int dot_omp_parallel(const int* v1, const int* v2, const size_t n) {
   return result;
 }
 
-int dot_omp_for(const int* v1, const int* v2, const size_t n) {
-  puts("Dot product: parallel for");
+int dot_parallel_for(const int* v1, const int* v2, const size_t n) {
+  puts("dot product: parallel for");
   int result = 0;
 #pragma omp parallel for default(none) shared(n, v1, v2) reduction(+ : result)
   for (size_t i = 0; i < n; i++) {
@@ -160,8 +160,8 @@ int main(int argc, char* argv[]) {
   const int expect = (n % 3 == 0 ? 0 : 36);
   dot_function_t dot_functions[] = {
       dot,
-      dot_omp_parallel,
-      dot_omp_for,
+      dot_parallel,
+      dot_parallel_for,
   };
   const size_t dot_functions_n = sizeof(dot_functions) / sizeof(dot_function_t);
 

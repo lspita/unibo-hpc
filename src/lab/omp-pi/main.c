@@ -143,7 +143,7 @@ unsigned int random_seed(const int id) {
 }
 
 unsigned int generate_points(unsigned int n) {
-  puts("Generate points: serial");
+  puts("generate points: serial");
   unsigned int n_inside = 0;
   /* The C function `rand()` is not thread-safe, since it modifies a
      global seed; therefore, it can not be used inside a parallel
@@ -163,7 +163,7 @@ unsigned int generate_points(unsigned int n) {
 }
 
 unsigned int generate_points_parallel(unsigned int n) {
-  puts("Generate points: parallel standard");
+  puts("generate points: parallel standard");
   const int P = omp_get_max_threads();
   unsigned int* const inside = (unsigned int*)calloc(P, sizeof(unsigned int));
 
@@ -196,7 +196,7 @@ unsigned int generate_points_parallel(unsigned int n) {
 }
 
 unsigned int generate_points_reduction(unsigned int n) {
-  puts("Generate points: parallel reduction");
+  puts("generate points: parallel reduction");
   unsigned int n_inside = 0;
 #pragma omp parallel
   {
