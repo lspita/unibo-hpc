@@ -8,7 +8,7 @@ Functions
 - check_isnotdir(path) error if path is a directory
 
 Variables:
-- PROJECT_LIB (library) library with all source files (except tests and executables)
+- PROJECT_LIB (library) library with all source files
 - SRC_DIR_ABS (string) abs path of ${SRC_DIR}
 - INCLUDE_DIR_ABS (string) abs path of ${INCLUDE_DIR}
 - LIB_DIR_ABS (string) abs path of ${LIB_DIR}
@@ -34,9 +34,19 @@ target_link_libraries(${PROJECT_LIB} PUBLIC
 )
 
 set(HPC_ROOT ${LIB_DIR}/HPC2526)
-set_source_files_properties(${HPC_ROOT}/matmul-test.c PROPERTIES 
-    COMPILE_FLAGS "-mavx2 -mfma"
-)
+set(HPC_AVX_FLAGS_SOURCES ${HPC_ROOT}/matmul-test.c)
+
+if (MSVC)
+    target_compile_options(${PROJECT_LIB} PRIVATE /W4)
+    set_source_files_properties(${HPC_AVX_FLAGS_SOURCES} PROPERTIES 
+        COMPILE_FLAGS "/arch:AVX2"
+    )
+else()
+    target_compile_options(${PROJECT_LIB} PRIVATE -Wall -Wextra -Wpedantic)
+    set_source_files_properties(${HPC_AVX_FLAGS_SOURCES} PROPERTIES 
+        COMPILE_FLAGS "-mavx2 -mfma"
+    )
+endif()
 
 set(PREVENT_COMPILE_SOURCES
     ${HPC_ROOT}/omp-bug1.c
