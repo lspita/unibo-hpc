@@ -19,9 +19,10 @@ set(PROJECT_VERSION 0.1.0)
 set(PROJECT_DESCRIPTION "High-Performance Computing course @ Computer Science and Engineering, UniBo, Cesena Campus")
 set(PROJECT_HOMEPAGE_URL https://github.com/lspita/unibo-hpc)
 enable_language(C)
-enable_language(CXX)
+enable_language(CXX) # required for cuda, not used
 enable_language(CUDA)
 
+# set host compiler for cuda
 foreach(lang C CXX)
     set(CMAKE_${lang}_HOST_COMPILER ${CMAKE_${lang}_COMPILER})
 endforeach()

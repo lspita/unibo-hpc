@@ -9,15 +9,17 @@ Functions
 
 Variables:
 - PROJECT_LIB (library) library with all source files
-- SRC_DIR_ABS (string) abs path of ${SRC_DIR}
-- INCLUDE_DIR_ABS (string) abs path of ${INCLUDE_DIR}
-- LIB_DIR_ABS (string) abs path of ${LIB_DIR}
+- SRC_SOURCES (list) list of all sources in SRC_DIR
+- EXEC_SOURCES (list) list of all sources that are executables
+- TEST_SOURCES (list) list of all sources that are tests
+- SRC_DIR_ABS (string) abs path of SRC_DIR
+- INCLUDE_DIR_ABS (string) abs path of INCLUDE_DIR
+- LIB_DIR_ABS (string) abs path of LIB_DIR
 
 Every test is named after the relative path from SRC_DIR.
 Targets are located under bin/<preset>/out
 - main targets are named after the directory name
-- the root main target is named <file basename>
-- test targets are named <file basename>.<TEST_EXTRA_EXT>
+- the root main target and the tests are named as the file without the last file extension
 ]]#
 
 find_package(OpenMP REQUIRED)
