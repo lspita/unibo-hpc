@@ -480,6 +480,8 @@ void render(int xsz, int ysz, pixel_t* fb, int samples) {
    * the colors of the subpixels of each pixel, then put the colors
    * into the framebuffer.
    */
+#pragma omp parallel for default(none) shared(ysz, xsz, samples, fb) \
+    schedule(dynamic) collapse(2)
   for (int j = 0; j < ysz; j++) {
     for (int i = 0; i < xsz; i++) {
       double r, g, b;
