@@ -165,10 +165,19 @@ void do_static(const int* vin, int* vout, int n) {
      never exceed the upper bound `n-1`.
   */
   const int chunk_size = 1; /* can be set to any value >= 1 */
-#pragma omp parallel for schedule(static, chunk_size)
-  for (int i = 0; i < n; i++) {
-    vout[i] = fib_rec(vin[i]);
-    /* printf("vin[%d]=%d vout[%d]=%d\n", i, vin[i], i, vout[i]); */
+#pragma omp parallel default(none) shared(chunk_size, n, vout, vin)
+  {
+    const int id = omp_get_thread_num();
+    const int num_threads = omp_get_num_threads();
+    const int start = id * chunk_size;
+    const int stride = num_threads * chunk_size;
+
+    for (int pivot = start; pivot < n; pivot += stride) {
+      for (int i = pivot; (i < pivot + chunk_size) && (i < n); i++) {
+        vout[i] = fib_rec(vin[i]);
+        /* printf("vin[%d]=%d vout[%d]=%d\n", i, vin[i], i, vout[i]); */
+      }
+    }
   }
 }
 
@@ -199,10 +208,22 @@ void do_dynamic(const int* vin, int* vout, int n) {
      } while (my_block_start < n);
   */
   const int chunk_size = 1; /* can be set to any value >= 1 */
-#pragma omp parallel for schedule(dynamic, chunk_size)
-  for (int i = 0; i < n; i++) {
-    vout[i] = fib_rec(vin[i]);
-    /* printf("vin[%d]=%d vout[%d]=%d\n", i, vin[i], i, vout[i]); */
+  int shared_idx = 0;
+#pragma omp parallel default(none) shared(shared_idx, chunk_size, n, vout, vin)
+  {
+    int start;
+    do {
+#pragma omp critical
+      {
+        start = shared_idx;
+        shared_idx += chunk_size;
+      }
+
+      for (int i = start; (i < start + chunk_size) && (i < n); i++) {
+        vout[i] = fib_rec(vin[i]);
+        /* printf("vin[%d]=%d vout[%d]=%d\n", i, vin[i], i, vout[i]); */
+      }
+    } while (start < n);
   }
 }
 
