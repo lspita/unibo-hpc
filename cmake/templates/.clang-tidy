@@ -1,17 +1,5 @@
 Checks: >
+  -*
   clang-diagnostic-*,
   clang-analyzer-*,
-  cert-*,
-  bugprone-*,
-  concurrency-*,
-  misc-*,
-  portability-*,
-  readability-*,
-  performance-*,
-  -modernize-*,
-  -cert-*,
-  -readability-identifier-length,
-  -readability-uppercase-literal-suffix,
-  -misc-use-internal-linkage,
-  -misc-static-assert,
 FormatStyle: file

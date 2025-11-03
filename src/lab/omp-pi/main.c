@@ -138,7 +138,7 @@ OpenMP threads and $N=20000$ points:
 typedef unsigned (*generate_points_function_t)(const unsigned int);
 
 unsigned int random_seed(const int id) {
-  // NOLINTNEXTLINE(readability-magic-numbers) deterministic number sequences
+  // deterministic number sequences
   return 17 + (19 * id);
 }
 
