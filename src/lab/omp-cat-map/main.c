@@ -206,17 +206,20 @@ might alter the functions too much) and executed as:
 
 Each measurement is the average of five independent executions.
 
-:Table 1: Execution time (in seconds; lower is better) of the command `./omp-cat-map 2048 < cat1368.pgm > /dev/null` using all processor cores, with different implementations of the cat map iteration.
+:Table 1: Execution time (in seconds; lower is better) of the command
+`./omp-cat-map 2048 < cat1368.pgm > /dev/null` using all processor cores, with
+different implementations of the cat map iteration.
 
-Processor           Cores   GHz  GCC version  No loop interchange   Loop interchange
------------------- ------ ----- ------------ -------------------- ------------------
-Intel Xeon E3-1220      4   3.5       11.4.0                 6.84              12.90
-Intel Xeon E5-2603     12   1.7        9.4.0                 6.11               7.74
-Intel i7-4790         4+4   3.6        9.4.0                 6.25               6.02
-Intel i7-9800X        8+8   3.8       11.4.0                 2.27               2.34
-Intel i5-11320H       4+4   4.5        9.4.0                 3.94               4.01
-Intel Atom N570       2+2   1.6        7.5.0               128.69              92.47
-Raspberry Pi 4          4   1.5        8.3.0                35.72              32.55
+Processor           Cores   GHz  GCC version  No loop interchange   Loop
+interchange
+------------------ ------ ----- ------------ --------------------
+------------------ Intel Xeon E3-1220 4   3.5       11.4.0                 6.84
+12.90 Intel Xeon E5-2603 12   1.7        9.4.0                 6.11 7.74 Intel
+i7-4790         4+4   3.6        9.4.0                 6.25               6.02
+Intel i7-9800X 8+8   3.8       11.4.0                 2.27               2.34
+Intel i5-11320H 4+4   4.5        9.4.0                 3.94               4.01
+Intel Atom N570       2+2   1.6        7.5.0 128.69              92.47 Raspberry
+Pi 4          4   1.5        8.3.0                35.72              32.55
 
 On some platforms (Intel i5, i7 and Raspberry Pi 4) there is little or
 no difference between the two versions. Loop interchange provides a
@@ -257,7 +260,8 @@ Figure 3 shows the minimum recurrence time as a function of
 $N$. Despite the fact that the values jumps around, they tend to align
 along straight lines.
 
-![Figure 3: Minimum recurrence time as a function of the image size $N$](cat-map-rectime.png)
+![Figure 3: Minimum recurrence time as a function of the image size
+$N$](cat-map-rectime.png)
 
 [omp-cat-map-rectime.c](omp-cat-map-rectime.c) contains an incomplete
 skeleton of a program that computes the minimum recurrence time of a
@@ -268,24 +272,25 @@ parallel version using OpenMP.
 
 - [omp-cat-map.c](omp-cat-map.c)
 - [omp-cat-map-rectime.c](omp-cat-map-rectime.c)
-- [cat1024.pgm](cat1024.pgm) (what is the minimum recurrence time of this image?)
-- [cat1368.pgm](cat1368.pgm) (verify that the minimum recurrence time of this image is 36)
+- [cat1024.pgm](cat1024.pgm) (what is the minimum recurrence time of this
+image?)
+- [cat1368.pgm](cat1368.pgm) (verify that the minimum recurrence time of this
+image is 36)
 
 ***/
 
+#include <assert.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <omp.h>
-
-#include <string.h>
 
 typedef struct {
-    int width;   /* Width of the image (in pixels) */
-    int height;  /* Height of the image (in pixels) */
-    int maxgrey; /* Don't care (used only by the PGM read/write routines) */
-    unsigned char *bmap; /* buffer of width*height bytes; each element represents the gray level of a pixel (0-255) */
+  int width;   /* Width of the image (in pixels) */
+  int height;  /* Height of the image (in pixels) */
+  int maxgrey; /* Don't care (used only by the PGM read/write routines) */
+  unsigned char* bmap; /* buffer of width*height bytes; each element represents
+                          the gray level of a pixel (0-255) */
 } PGM_image;
 
 const unsigned char WHITE = 255;
@@ -295,22 +300,21 @@ const unsigned char BLACK = 0;
  * Initialize a PGM_image object: allocate space for a bitmap of size
  * `width` x `height`, and set all pixels to color `col`
  */
-void init_pgm( PGM_image *img, int width, int height, unsigned char col )
-{
-    int i, j;
+void init_pgm(PGM_image* img, int width, int height, unsigned char col) {
+  int i, j;
 
-    assert(img != NULL);
+  assert(img != NULL);
 
-    img->width = width;
-    img->height = height;
-    img->maxgrey = 255;
-    img->bmap = (unsigned char*)malloc(width*height);
-    assert(img->bmap != NULL);
-    for (i=0; i<height; i++) {
-        for (j=0; j<width; j++) {
-            img->bmap[i*width + j] = col;
-        }
+  img->width = width;
+  img->height = height;
+  img->maxgrey = 255;
+  img->bmap = (unsigned char*)malloc(width * height);
+  assert(img->bmap != NULL);
+  for (i = 0; i < height; i++) {
+    for (j = 0; j < width; j++) {
+      img->bmap[i * width + j] = col;
     }
+  }
 }
 
 /**
@@ -318,67 +322,68 @@ void init_pgm( PGM_image *img, int width, int height, unsigned char col )
  * robust: it may fail on legal PGM images, and may crash on invalid
  * files since no proper error checking is done.
  */
-void read_pgm( FILE *f, PGM_image* img )
-{
-    char buf[1024];
-    const size_t BUFSIZE = sizeof(buf);
-    char *s;
-    int nread;
+void read_pgm(FILE* f, PGM_image* img) {
+  char buf[1024];
+  const size_t BUFSIZE = sizeof(buf);
+  char* s;
+  int nread;
 
-    assert(f != NULL);
-    assert(img != NULL);
+  assert(f != NULL);
+  assert(img != NULL);
 
-    /* Get the file type (must be "P5") */
+  /* Get the file type (must be "P5") */
+  s = fgets(buf, BUFSIZE, f);
+  if (0 != strcmp(s, "P5\n")) {
+    fprintf(stderr, "Wrong file type %s\n", buf);
+    exit(EXIT_FAILURE);
+  }
+  /* Get any comment and ignore it; does not work if there are
+     leading spaces in the comment line */
+  do {
     s = fgets(buf, BUFSIZE, f);
-    if (0 != strcmp(s, "P5\n")) {
-        fprintf(stderr, "Wrong file type %s\n", buf);
-        exit(EXIT_FAILURE);
-    }
-    /* Get any comment and ignore it; does not work if there are
-       leading spaces in the comment line */
-    do {
-        s = fgets(buf, BUFSIZE, f);
-    } while (s[0] == '#');
-    /* Get width, height */
-    sscanf(s, "%d %d", &(img->width), &(img->height));
-    /* get maxgrey; must be less than or equal to 255 */
-    s = fgets(buf, BUFSIZE, f);
-    sscanf(s, "%d", &(img->maxgrey));
-    if ( img->maxgrey > 255 ) {
-        fprintf(stderr, "FATAL: maxgray=%d > 255\n", img->maxgrey);
-        exit(EXIT_FAILURE);
-    }
+  } while (s[0] == '#');
+  /* Get width, height */
+  sscanf(s, "%d %d", &(img->width), &(img->height));
+  /* get maxgrey; must be less than or equal to 255 */
+  s = fgets(buf, BUFSIZE, f);
+  sscanf(s, "%d", &(img->maxgrey));
+  if (img->maxgrey > 255) {
+    fprintf(stderr, "FATAL: maxgray=%d > 255\n", img->maxgrey);
+    exit(EXIT_FAILURE);
+  }
 #if _XOPEN_SOURCE < 600
-    img->bmap = (unsigned char*)malloc((img->width)*(img->height)*sizeof(unsigned char));
+  img->bmap = (unsigned char*)malloc((img->width) * (img->height) *
+                                     sizeof(unsigned char));
 #else
-    /* The pointer img->bmap must be properly aligned to allow aligned
-       SIMD load/stores to work. */
-    int ret = posix_memalign((void**)&(img->bmap), __BIGGEST_ALIGNMENT__, (img->width)*(img->height));
-    assert( 0 == ret );
+  /* The pointer img->bmap must be properly aligned to allow aligned
+     SIMD load/stores to work. */
+  int ret = posix_memalign((void**)&(img->bmap), __BIGGEST_ALIGNMENT__,
+                           (img->width) * (img->height));
+  assert(0 == ret);
 #endif
-    assert(img->bmap != NULL);
-    /* Get the binary data from the file */
-    nread = fread(img->bmap, 1, (img->width)*(img->height), f);
-    if ( (img->width)*(img->height) != nread ) {
-        fprintf(stderr, "FATAL: error reading input: expecting %d bytes, got %d\n", (img->width)*(img->height), nread);
-        exit(EXIT_FAILURE);
-    }
+  assert(img->bmap != NULL);
+  /* Get the binary data from the file */
+  nread = fread(img->bmap, 1, (img->width) * (img->height), f);
+  if ((img->width) * (img->height) != nread) {
+    fprintf(stderr, "FATAL: error reading input: expecting %d bytes, got %d\n",
+            (img->width) * (img->height), nread);
+    exit(EXIT_FAILURE);
+  }
 }
 
 /**
  * Write the image `img` to file `f`; if not NULL, use the string
  * `comment` as metadata.
  */
-void write_pgm( FILE *f, const PGM_image* img, const char *comment )
-{
-    assert(f != NULL);
-    assert(img != NULL);
+void write_pgm(FILE* f, const PGM_image* img, const char* comment) {
+  assert(f != NULL);
+  assert(img != NULL);
 
-    fprintf(f, "P5\n");
-    fprintf(f, "# %s\n", comment != NULL ? comment : "");
-    fprintf(f, "%d %d\n", img->width, img->height);
-    fprintf(f, "%d\n", img->maxgrey);
-    fwrite(img->bmap, 1, (img->width)*(img->height), f);
+  fprintf(f, "P5\n");
+  fprintf(f, "# %s\n", comment != NULL ? comment : "");
+  fprintf(f, "%d %d\n", img->width, img->height);
+  fprintf(f, "%d\n", img->maxgrey);
+  fwrite(img->bmap, 1, (img->width) * (img->height), f);
 }
 
 /**
@@ -386,12 +391,11 @@ void write_pgm( FILE *f, const PGM_image* img, const char *comment )
  * structure pointed to by `img` is NOT deallocated; only `img->bmap`
  * is.
  */
-void free_pgm( PGM_image *img )
-{
-    assert(img != NULL);
-    free(img->bmap);
-    img->bmap = NULL; /* not necessary */
-    img->width = img->height = img->maxgrey = -1;
+void free_pgm(PGM_image* img) {
+  assert(img != NULL);
+  free(img->bmap);
+  img->bmap = NULL; /* not necessary */
+  img->width = img->height = img->maxgrey = -1;
 }
 
 /**
@@ -404,130 +408,129 @@ void free_pgm( PGM_image *img )
  * each iteration of the cat map, the role of the two bitmaps are
  * exchanged.
  */
-void cat_map( PGM_image* img, int k )
-{
-    const int N = img->width;
-    unsigned char *cur = img->bmap;
-    unsigned char *next = (unsigned char*)malloc( N*N*sizeof(unsigned char) );
-    unsigned char *tmp;
+void cat_map(PGM_image* img, int k) {
+  const int N = img->width;
+  unsigned char* cur = img->bmap;
+  unsigned char* next = (unsigned char*)malloc(N * N * sizeof(unsigned char));
+  unsigned char* tmp;
 
-    assert(next != NULL);
-    assert(img->width == img->height);
+  assert(next != NULL);
+  assert(img->width == img->height);
 
-    /* [TODO] Which of the following loop(s) can be parallelized? */
-    for (int i=0; i<k; i++) {
-#pragma omp parallel for collapse(2) default(none) shared(cur,next,tmp,img,N)
-        for (int y=0; y<N; y++) {
-            for (int x=0; x<N; x++) {
-                const int xnext = (2*x+y) % N;
-                const int ynext = (x + y) % N;
-                next[ynext*N + xnext] = cur[x+y*N];
-            }
-        }
-        /* Swap old and new */
-        tmp = cur;
-        cur = next;
-        next = tmp;
+  /* [TODO] Which of the following loop(s) can be parallelized? */
+  for (int i = 0; i < k; i++) {
+    for (int y = 0; y < N; y++) {
+      for (int x = 0; x < N; x++) {
+        const int xnext = (2 * x + y) % N;
+        const int ynext = (x + y) % N;
+        next[ynext * N + xnext] = cur[x + y * N];
+      }
     }
-    img->bmap = cur;
-    free(next);
+    /* Swap old and new */
+    tmp = cur;
+    cur = next;
+    next = tmp;
+  }
+  img->bmap = cur;
+  free(next);
 }
 
-void cat_map_interchange( PGM_image* img, int k )
-{
-    const int N = img->width;
-    unsigned char *cur = img->bmap;
-    unsigned char *next = (unsigned char*)malloc( N*N*sizeof(unsigned char) );
+void cat_map_interchange(PGM_image* img, int k) {
+  const int N = img->width;
+  unsigned char* cur = img->bmap;
+  unsigned char* next = (unsigned char*)malloc(N * N * sizeof(unsigned char));
 
-    assert(next != NULL);
-    assert(img->width == img->height);
+  assert(next != NULL);
+  assert(img->width == img->height);
 
-    /* [TODO] Which of the following loop(s) can be parallelized? */
-#pragma omp parallel for collapse(2) default(none) shared(N,cur,next,k)
-    for (int y=0; y<N; y++) {
-        for (int x=0; x<N; x++) {
-            /* Compute the k-th iterate of pixel (x, y) */
-            int xcur = x, ycur = y;
-            for (int i=0; i<k; i++) {
-                const int xnext = (2*xcur+ycur) % N;
-                const int ynext = (xcur + ycur) % N;
-                xcur = xnext;
-                ycur = ynext;
-            }
-            next[ycur*N+xcur] = cur[y*N+x];
-        }
+  /* [TODO] Which of the following loop(s) can be parallelized? */
+  for (int y = 0; y < N; y++) {
+    for (int x = 0; x < N; x++) {
+      /* Compute the k-th iterate of pixel (x, y) */
+      int xcur = x, ycur = y;
+      for (int i = 0; i < k; i++) {
+        const int xnext = (2 * xcur + ycur) % N;
+        const int ynext = (xcur + ycur) % N;
+        xcur = xnext;
+        ycur = ynext;
+      }
+      next[ycur * N + xcur] = cur[y * N + x];
     }
-    img->bmap = next;
-    free(cur);
+  }
+  img->bmap = next;
+  free(cur);
 }
 
-int main( int argc, char* argv[] )
-{
-    PGM_image img;
-    int niter;
-    double elapsed;
-    const int NTESTS = 5; /* number of replications */
+int main(int argc, char* argv[]) {
+  PGM_image img;
+  int niter;
+  double elapsed;
+  const int NTESTS = 5; /* number of replications */
 
-    if ( argc != 2 ) {
-        fprintf(stderr, "Usage: %s niter < input > output\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-    niter = atoi(argv[1]);
-    read_pgm(stdin, &img);
+  if (argc != 2) {
+    fprintf(stderr, "Usage: %s niter < input > output\n", argv[0]);
+    return EXIT_FAILURE;
+  }
+  niter = atoi(argv[1]);
+  read_pgm(stdin, &img);
 
-    if ( img.width != img.height ) {
-        fprintf(stderr, "FATAL: width (%d) and height (%d) of the input image must be equal\n", img.width, img.height);
-        return EXIT_FAILURE;
-    }
+  if (img.width != img.height) {
+    fprintf(
+        stderr,
+        "FATAL: width (%d) and height (%d) of the input image must be equal\n",
+        img.width, img.height);
+    return EXIT_FAILURE;
+  }
 
-    /**
-     ** WITHOUT loop interchange
-     **/
-    elapsed = 0.0;
-    for (int i=0; i<NTESTS; i++) {
-        fprintf(stderr, "Run %d of %d\n", i+1, NTESTS);
-        const double tstart = omp_get_wtime();
-        cat_map(&img, niter);
-        elapsed += omp_get_wtime()- tstart;
-        if (i==0)
-            write_pgm(stdout, &img, "produced by omp-cat-map.c");
-    }
-    elapsed /= NTESTS;
+  /**
+   ** WITHOUT loop interchange
+   **/
+  elapsed = 0.0;
+  for (int i = 0; i < NTESTS; i++) {
+    fprintf(stderr, "Run %d of %d\n", i + 1, NTESTS);
+    const double tstart = omp_get_wtime();
+    cat_map(&img, niter);
+    elapsed += omp_get_wtime() - tstart;
+    if (i == 0) write_pgm(stdout, &img, "produced by omp-cat-map.c");
+  }
+  elapsed /= NTESTS;
 
-    fprintf(stderr, "\n=== Without loop interchange ===\n");
+  fprintf(stderr, "\n=== Without loop interchange ===\n");
 #if defined(_OPENMP)
-    fprintf(stderr, "  OpenMP threads: %d\n", omp_get_max_threads());
+  fprintf(stderr, "  OpenMP threads: %d\n", omp_get_max_threads());
 #else
-    fprintf(stderr, "  OpenMP disabled\n");
+  fprintf(stderr, "  OpenMP disabled\n");
 #endif
-    fprintf(stderr, "    Iterations: %d\n", niter);
-    fprintf(stderr, "  Width,Height: %d,%d\n", img.width, img.height);
-    fprintf(stderr, "      Mops/sec: %f\n", 1.0e-6 * img.width * img.height * niter / elapsed);
-    fprintf(stderr, "Execution time  %.3f\n\n", elapsed);
+  fprintf(stderr, "    Iterations: %d\n", niter);
+  fprintf(stderr, "  Width,Height: %d,%d\n", img.width, img.height);
+  fprintf(stderr, "      Mops/sec: %f\n",
+          1.0e-6 * img.width * img.height * niter / elapsed);
+  fprintf(stderr, "Execution time  %.3f\n\n", elapsed);
 
-    /**
-     ** WITH loop interchange
-     **/
-    elapsed = 0.0;
-    for (int i=0; i<NTESTS; i++) {
-        fprintf(stderr, "Run %d of %d\n", i+1, NTESTS);
-        const double tstart = omp_get_wtime();
-        cat_map_interchange(&img, niter);
-        elapsed += omp_get_wtime() - tstart;
-    }
-    elapsed /= NTESTS;
+  /**
+   ** WITH loop interchange
+   **/
+  elapsed = 0.0;
+  for (int i = 0; i < NTESTS; i++) {
+    fprintf(stderr, "Run %d of %d\n", i + 1, NTESTS);
+    const double tstart = omp_get_wtime();
+    cat_map_interchange(&img, niter);
+    elapsed += omp_get_wtime() - tstart;
+  }
+  elapsed /= NTESTS;
 
-    fprintf(stderr, "\n=== With loop interchange ===\n");
+  fprintf(stderr, "\n=== With loop interchange ===\n");
 #if defined(_OPENMP)
-    fprintf(stderr, "  OpenMP threads: %d\n", omp_get_max_threads());
+  fprintf(stderr, "  OpenMP threads: %d\n", omp_get_max_threads());
 #else
-    fprintf(stderr, "  OpenMP disabled\n");
+  fprintf(stderr, "  OpenMP disabled\n");
 #endif
-    fprintf(stderr, "    Iterations: %d\n", niter);
-    fprintf(stderr, "  Width,Height: %d,%d\n", img.width, img.height);
-    fprintf(stderr, "      Mops/sec: %.4f\n", 1.0e-6 * img.width * img.height * niter / elapsed);
-    fprintf(stderr, "Execution time  %.3f\n\n", elapsed);
+  fprintf(stderr, "    Iterations: %d\n", niter);
+  fprintf(stderr, "  Width,Height: %d,%d\n", img.width, img.height);
+  fprintf(stderr, "      Mops/sec: %.4f\n",
+          1.0e-6 * img.width * img.height * niter / elapsed);
+  fprintf(stderr, "Execution time  %.3f\n\n", elapsed);
 
-    free_pgm( &img );
-    return EXIT_SUCCESS;
+  free_pgm(&img);
+  return EXIT_SUCCESS;
 }

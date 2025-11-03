@@ -132,8 +132,6 @@ see the complete list:
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-#define DEFAULT_X_RES 800
-#define DEFAULT_Y_RES 600
 
 typedef struct {
   double x, y, z;
@@ -188,8 +186,8 @@ const double ERR_MARGIN =
 const double DEG_TO_RAD = M_PI / 180.0; /* convert degrees to radians   */
 
 /* global state */
-int xres = DEFAULT_X_RES;
-int yres = DEFAULT_Y_RES;
+int xres = 800;
+int yres = 600;
 double aspect;
 sphere_t* obj_list = NULL;
 vec3_t lights[MAX_LIGHTS];
@@ -214,9 +212,7 @@ const char* usage = {
     "  -h         this help screen\n\n"};
 
 /* vector dot product */
-double dot(vec3_t a, vec3_t b) {
-  return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
-}
+double dot(vec3_t a, vec3_t b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 /* square of x */
 double sq(double x) { return x * x; }
@@ -232,20 +228,19 @@ vec3_t normalize(vec3_t v) {
 
 /* calculate reflection vector */
 vec3_t reflect(vec3_t v, vec3_t n) {
-  const double reflect_factor = 2.0;
   vec3_t res;
   double d = dot(v, n);
-  res.x = -((reflect_factor * d * n.x) - v.x);
-  res.y = -((reflect_factor * d * n.y) - v.y);
-  res.z = -((reflect_factor * d * n.z) - v.z);
+  res.x = -(2.0 * d * n.x - v.x);
+  res.y = -(2.0 * d * n.y - v.y);
+  res.z = -(2.0 * d * n.z - v.z);
   return res;
 }
 
 vec3_t cross_product(vec3_t v1, vec3_t v2) {
   vec3_t res;
-  res.x = (v1.y * v2.z) - (v1.z * v2.y);
-  res.y = (v1.z * v2.x) - (v1.x * v2.z);
-  res.z = (v1.x * v2.y) - (v1.y * v2.x);
+  res.x = v1.y * v2.z - v1.z * v2.y;
+  res.y = v1.z * v2.x - v1.x * v2.z;
+  res.z = v1.x * v2.y - v1.y * v2.x;
   return res;
 }
 
@@ -267,18 +262,16 @@ int ray_sphere(const sphere_t* sph, ray_t ray, spoint_t* sp) {
   double a, b, c, d, sqrt_d, t1, t2;
 
   a = sq(ray.dir.x) + sq(ray.dir.y) + sq(ray.dir.z);
-  b = (2.0 * ray.dir.x * (ray.orig.x - sph->pos.x)) +
-      (2.0 * ray.dir.y * (ray.orig.y - sph->pos.y)) +
-      (2.0 * ray.dir.z * (ray.orig.z - sph->pos.z));
+  b = 2.0 * ray.dir.x * (ray.orig.x - sph->pos.x) +
+      2.0 * ray.dir.y * (ray.orig.y - sph->pos.y) +
+      2.0 * ray.dir.z * (ray.orig.z - sph->pos.z);
   c = sq(sph->pos.x) + sq(sph->pos.y) + sq(sph->pos.z) + sq(ray.orig.x) +
       sq(ray.orig.y) + sq(ray.orig.z) +
-      (2.0 * (-sph->pos.x * ray.orig.x - sph->pos.y * ray.orig.y -
-              sph->pos.z * ray.orig.z)) -
+      2.0 * (-sph->pos.x * ray.orig.x - sph->pos.y * ray.orig.y -
+             sph->pos.z * ray.orig.z) -
       sq(sph->rad);
-  d = sq(b) - 4.0 * a * c;
-  if (d < 0.0) {
-    return 0;
-  }
+
+  if ((d = sq(b) - 4.0 * a * c) < 0.0) return 0;
 
   sqrt_d = sqrt(d);
   t1 = (-b + sqrt_d) / (2.0 * a);
@@ -287,17 +280,13 @@ int ray_sphere(const sphere_t* sph, ray_t ray, spoint_t* sp) {
   if ((t1 < ERR_MARGIN && t2 < ERR_MARGIN) || (t1 > 1.0 && t2 > 1.0)) return 0;
 
   if (sp) {
-    if (t1 < ERR_MARGIN) {
-      t1 = t2;
-    };
-    if (t2 < ERR_MARGIN) {
-      t2 = t1;
-    }
+    if (t1 < ERR_MARGIN) t1 = t2;
+    if (t2 < ERR_MARGIN) t2 = t1;
     sp->dist = t1 < t2 ? t1 : t2;
 
-    sp->pos.x = ray.orig.x + (ray.dir.x * sp->dist);
-    sp->pos.y = ray.orig.y + (ray.dir.y * sp->dist);
-    sp->pos.z = ray.orig.z + (ray.dir.z * sp->dist);
+    sp->pos.x = ray.orig.x + ray.dir.x * sp->dist;
+    sp->pos.y = ray.orig.y + ray.dir.y * sp->dist;
+    sp->pos.z = ray.orig.z + ray.dir.z * sp->dist;
 
     sp->normal.x = (sp->pos.x - sph->pos.x) / sph->rad;
     sp->normal.y = (sp->pos.y - sph->pos.y) / sph->rad;
@@ -362,16 +351,16 @@ ray_t get_primary_ray(int x, int y, int sample) {
   dir.x = ray.dir.x + ray.orig.x;
   dir.y = ray.dir.y + ray.orig.y;
   dir.z = ray.dir.z + ray.orig.z;
-  foo.x = (dir.x * m[0][0]) + (dir.y * m[0][1]) + (dir.z * m[0][2]);
-  foo.y = (dir.x * m[1][0]) + (dir.y * m[1][1]) + (dir.z * m[1][2]);
-  foo.z = (dir.x * m[2][0]) + (dir.y * m[2][1]) + (dir.z * m[2][2]);
+  foo.x = dir.x * m[0][0] + dir.y * m[0][1] + dir.z * m[0][2];
+  foo.y = dir.x * m[1][0] + dir.y * m[1][1] + dir.z * m[1][2];
+  foo.z = dir.x * m[2][0] + dir.y * m[2][1] + dir.z * m[2][2];
 
-  orig.x = (ray.orig.x * m[0][0]) + (ray.orig.y * m[0][1]) +
-           (ray.orig.z * m[0][2]) + cam.pos.x;
-  orig.y = (ray.orig.x * m[1][0]) + (ray.orig.y * m[1][1]) +
-           (ray.orig.z * m[1][2]) + cam.pos.y;
-  orig.z = (ray.orig.x * m[2][0]) + (ray.orig.y * m[2][1]) +
-           (ray.orig.z * m[2][2]) + cam.pos.z;
+  orig.x = ray.orig.x * m[0][0] + ray.orig.y * m[0][1] + ray.orig.z * m[0][2] +
+           cam.pos.x;
+  orig.y = ray.orig.x * m[1][0] + ray.orig.y * m[1][1] + ray.orig.z * m[1][2] +
+           cam.pos.y;
+  orig.z = ray.orig.x * m[2][0] + ray.orig.y * m[2][1] + ray.orig.z * m[2][2] +
+           cam.pos.z;
 
   ray.orig = orig;
   ray.dir.x = foo.x + orig.x;
@@ -420,9 +409,9 @@ vec3_t shade(sphere_t* obj, spoint_t* sp, int depth) {
                   ? pow(fmax(dot(sp->vref, ldir), 0.0), obj->mat.spow)
                   : 0.0;
 
-      col.x += (idiff * obj->mat.col.x) + ispec;
-      col.y += (idiff * obj->mat.col.y) + ispec;
-      col.z += (idiff * obj->mat.col.z) + ispec;
+      col.x += idiff * obj->mat.col.x + ispec;
+      col.y += idiff * obj->mat.col.y + ispec;
+      col.z += idiff * obj->mat.col.z + ispec;
     }
   }
 
@@ -491,10 +480,6 @@ void render(int xsz, int ysz, pixel_t* fb, int samples) {
    * the colors of the subpixels of each pixel, then put the colors
    * into the framebuffer.
    */
-  /* You might want to play with the "schedule" clause */
-
-#pragma omp parallel for default(none) shared(samples, fb, xsz, ysz) \
-    schedule(dynamic)
   for (int j = 0; j < ysz; j++) {
     for (int i = 0; i < xsz; i++) {
       double r, g, b;
@@ -511,9 +496,9 @@ void render(int xsz, int ysz, pixel_t* fb, int samples) {
       g /= samples;
       b /= samples;
 
-      fb[(j * xsz) + i].r = (uint8_t)(fmin(r, 1.0) * 255.0);
-      fb[(j * xsz) + i].g = (uint8_t)(fmin(g, 1.0) * 255.0);
-      fb[(j * xsz) + i].b = (uint8_t)(fmin(b, 1.0) * 255.0);
+      fb[j * xsz + i].r = (uint8_t)(fmin(r, 1.0) * 255.0);
+      fb[j * xsz + i].g = (uint8_t)(fmin(g, 1.0) * 255.0);
+      fb[j * xsz + i].b = (uint8_t)(fmin(b, 1.0) * 255.0);
     }
   }
 }
@@ -535,19 +520,16 @@ void load_scene(FILE* fp) {
     char type;
     double fov;
 
-    while ((*ptr == ' ') || (*ptr == '\t')) { /* checking '\0' is implied */
+    while ((*ptr == ' ') || (*ptr == '\t')) /* checking '\0' is implied */
       ptr++;
-    }
-    if ((*ptr == '#') || (*ptr == '\n') || (*ptr == '\0')) {
-      continue;
-    }
+    if ((*ptr == '#') || (*ptr == '\n') || (*ptr == '\0')) continue;
 
     type = *ptr;
     ptr++;
 
     switch (type) {
       case 's': /* sphere */
-        sph = malloc(sizeof *sph);
+        sph = (sphere_t*)malloc(sizeof *sph);
         assert(sph != NULL);
         sph->next = obj_list;
         obj_list = sph;
@@ -650,7 +632,7 @@ int main(int argc, char* argv[]) {
 
   aspect = (double)xres / (double)yres;
 
-  if ((pixels = malloc(xres * yres * sizeof(*pixels))) == NULL) {
+  if ((pixels = (pixel_t*)malloc(xres * yres * sizeof(*pixels))) == NULL) {
     fprintf(stderr, "FATAL: pixel buffer allocation failed");
     return EXIT_FAILURE;
   }
