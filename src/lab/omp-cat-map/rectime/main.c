@@ -65,6 +65,7 @@ Example:
 
 #include <assert.h>
 #include <omp.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -99,7 +100,45 @@ int lcm(int a, int b) {
 int cat_map_rectime(int n) {
   /* [TODO] Implement this function; start with a working serial
      version, then parallelize. */
-  return 0;
+
+  if (n == 0) return 0;
+
+  const int total_pixels = n * n;
+  int* const recurrences = (int*)calloc(total_pixels, sizeof(int));
+
+#pragma omp parallel for collapse(2) default(none) shared(n, recurrences)
+  for (int y = 0; y < n; y++) {
+    for (int x = 0; x < n; x++) {
+      int xcur = x, ycur = y;
+      do {
+        const int xnext = (2 * xcur + ycur) % n;
+        const int ynext = (xcur + ycur) % n;
+        xcur = xnext;
+        ycur = ynext;
+        recurrences[y * n + x]++;
+      } while (xcur != x || ycur != y);
+    }
+  }
+
+  // custom reduction
+  int n1 = total_pixels;
+  int n2;
+  do {
+    n2 = (n1 + 1) / 2;
+    // slower when parallelized ????
+    // #pragma omp parallel for default(none) shared(n1, n2, recurrences)
+    for (int i = 0; i < n2; i++) {
+      if (i + n2 < n1) {
+        recurrences[i] = lcm(recurrences[i], recurrences[i + n2]);
+      }
+    }
+    n1 = n2;
+  } while (n2 > 1);
+
+  const int total_lcm = recurrences[0];
+  free(recurrences);
+
+  return total_lcm;
 }
 
 int main(int argc, char* argv[]) {

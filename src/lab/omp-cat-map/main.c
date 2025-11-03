@@ -419,6 +419,7 @@ void cat_map(PGM_image* img, int k) {
 
   /* [TODO] Which of the following loop(s) can be parallelized? */
   for (int i = 0; i < k; i++) {
+#pragma omp parallel for default(none) shared(N, next, cur) collapse(2)
     for (int y = 0; y < N; y++) {
       for (int x = 0; x < N; x++) {
         const int xnext = (2 * x + y) % N;
@@ -444,6 +445,7 @@ void cat_map_interchange(PGM_image* img, int k) {
   assert(img->width == img->height);
 
   /* [TODO] Which of the following loop(s) can be parallelized? */
+#pragma omp parallel for default(none) shared(N, next, cur, k) collapse(2)
   for (int y = 0; y < N; y++) {
     for (int x = 0; x < N; x++) {
       /* Compute the k-th iterate of pixel (x, y) */
