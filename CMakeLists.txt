@@ -9,7 +9,7 @@ endfunction()
 set(SRC_DIR src)
 set(INCLUDE_DIR include)
 set(LIB_DIR lib)
-set(EXEC_PATTERNS main)
+set(EXEC_PATTERNS main *.main)
 set(TEST_PATTERNS *.test)
 set(CMAKE_DIR cmake)
 set(CMAKE_TEMPLATES_DIR templates)
@@ -141,13 +141,7 @@ function(make_executable outexe outid outpath filepath)
     get_filename_component(filename "${filepath}" NAME)
     get_filename_component(exename "${filepath}" NAME_WLE)
     get_filename_component(exedir "${filepath}" DIRECTORY)
-    if (
-        "${filepath}" IN_LIST EXEC_SOURCES AND
-        NOT "${exedir}" STREQUAL ${SRC_DIR_ABS}
-    )
-        get_filename_component(exename "${exedir}" NAME)
-        get_filename_component(exedir "${exedir}" DIRECTORY)
-    endif()
+    
     src_path(exepath "${exedir}/${exename}")
     string(REPLACE "/" "_" exeid "${exepath}")
 

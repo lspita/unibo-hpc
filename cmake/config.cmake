@@ -17,9 +17,7 @@ Variables:
 - LIB_DIR_ABS (string) abs path of LIB_DIR
 
 Every test is named after the relative path from SRC_DIR.
-Targets are located under bin/<preset>/out
-- main targets are named after the directory name
-- the root main target and the tests are named as the file without the last file extension
+Targets are located under bin/<preset>/targets
 ]]#
 
 find_package(OpenMP REQUIRED)

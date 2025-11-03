@@ -6,7 +6,7 @@ Variables:
 - SRC_DIR (string, default=src) sources directory
 - INCLUDE_DIR (string, default=include) public include directory
 - LIB_DIR (string, default=lib) external lib files
-- EXEC_PATTERNS (list, default=main) list of patterns matching sources that are executables (without last file extension)
+- EXEC_PATTERNS (list, default=main *.main) list of patterns matching sources that are executables (without last file extension)
 - TEST_PATTERNS (list, default=*.test) list of patterns matching sources that are tests (without last file extension)
 - TARGETS_DIR (string, default=targets) binary directory relative path containing all targets
 - CMAKE_DIR (string, default=cmake) cmake config files directory
