@@ -167,10 +167,14 @@ void mergesort_rec(int* v, int i, int j, int* tmp) {
        the values of these variables can not change between task
        creation and execution, so they can be made all
        `shared`. */
+
+#pragma omp task default(none) shared(v, i, m, tmp)
     mergesort_rec(v, i, m, tmp);
+#pragma omp task default(none) shared(v, j, m, tmp)
     mergesort_rec(v, m + 1, j, tmp);
     /* Wait for completion of the recursive invocations of
        `mergesort_rec()` before merging. */
+#pragma omp taskwait
     merge(v, i, m, j, tmp);
     /* copy the sorted data back to v */
     memcpy(v + i, tmp + i, (j - i + 1) * sizeof(v[0]));
@@ -188,6 +192,8 @@ void mergesort(int* v, int n) {
   assert(tmp != NULL);
   /* [TODO] Create a parallel region, and make sure that only one
      thread calls mergesort_rec() to start the recursion. */
+#pragma omp parallel default(none) shared(v, n, tmp)
+#pragma omp master
   mergesort_rec(v, 0, n - 1, tmp);
   free(tmp);
 }
