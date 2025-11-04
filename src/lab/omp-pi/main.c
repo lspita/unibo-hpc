@@ -135,14 +135,14 @@ OpenMP threads and $N=20000$ points:
 
 #define DEFAULT_N_POINTS 10000000
 
-typedef unsigned (*generate_points_function_t)(const unsigned int);
+typedef int (*generate_points_function_t)(int);
 
 unsigned int random_seed(const int id) {
   // deterministic number sequences
   return 17 + (19 * id);
 }
 
-unsigned int generate_points(unsigned int n) {
+int generate_points_serial(int n) {
   puts("generate points: serial");
   unsigned int n_inside = 0;
   /* The C function `rand()` is not thread-safe, since it modifies a
@@ -151,7 +151,7 @@ unsigned int generate_points(unsigned int n) {
      seed. However, this means that in general the result computed
      by this program depends on the number of threads. */
   unsigned int my_seed = random_seed(omp_get_thread_num());
-  for (unsigned int i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     /* Generate two random values in the range [-1, 1] */
     const double x = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
     const double y = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
@@ -162,8 +162,8 @@ unsigned int generate_points(unsigned int n) {
   return n_inside;
 }
 
-unsigned int generate_points_parallel(unsigned int n) {
-  puts("generate points: parallel standard");
+int omp_generate_points_parallel(int n) {
+  puts("generate points: omp parallel");
   const int P = omp_get_max_threads();
   unsigned int* const inside = (unsigned int*)calloc(P, sizeof(unsigned int));
 
@@ -195,15 +195,15 @@ unsigned int generate_points_parallel(unsigned int n) {
   return sum;
 }
 
-unsigned int generate_points_reduction(unsigned int n) {
-  puts("generate points: parallel reduction");
+int omp_generate_points_reduction(int n) {
+  puts("generate points: omp reduction");
   unsigned int n_inside = 0;
 #pragma omp parallel
   {
     const int thread_id = omp_get_thread_num();
     unsigned int my_seed = random_seed(thread_id);
 #pragma omp for reduction(+ : n_inside)
-    for (size_t i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
       /* Generate two random values in the range [-1, 1] */
       const double x = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
       const double y = (2.0 * rand_r(&my_seed) / (double)RAND_MAX) - 1.0;
@@ -230,9 +230,9 @@ int main(int argc, char* argv[]) {
   }
 
   generate_points_function_t generate_points_functions[] = {
-      generate_points,
-      generate_points_parallel,
-      generate_points_reduction,
+      generate_points_serial,
+      omp_generate_points_parallel,
+      omp_generate_points_reduction,
   };
   const size_t generate_points_n =
       sizeof(generate_points_functions) / sizeof(generate_points_function_t);

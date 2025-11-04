@@ -104,6 +104,13 @@ Example, using 4 MPI processes:
 #define M_PI 3.14159265358979323846
 #endif
 
+#define MASTER_RANK 0
+#define VALUE_TAG 0
+
+typedef int (*generate_points_function_t)(int);
+
+int my_rank, comm_sz;
+
 /* Generate `n` random points within the square with corners (-1, -1),
    (1, 1); return the number of points that fall inside the circle
    centered ad the origin with radius 1 */
@@ -119,8 +126,28 @@ int generate_points(int n) {
   return n_inside;
 }
 
+int mpi_generate_points_naive(int n) {
+  int I;
+  switch (my_rank) {
+    case MASTER_RANK:
+      puts("generate points: mpi naive");
+      I = generate_points((n / comm_sz) + (n % comm_sz));
+      for (int rank = 0; rank < comm_sz - 1; rank++) {
+        int buff;
+        MPI_Recv(&buff, 1, MPI_INT, MPI_ANY_SOURCE, VALUE_TAG, MPI_COMM_WORLD,
+                 MPI_STATUS_IGNORE);
+        I += buff;
+      }
+      break;
+    default:
+      I = generate_points(n / comm_sz);
+      MPI_Send(&I, 1, MPI_INT, MASTER_RANK, VALUE_TAG, MPI_COMM_WORLD);
+      break;
+  }
+  return I;
+}
+
 int main(int argc, char* argv[]) {
-  int my_rank, comm_sz;
   int inside = 0, npoints = 1000000;
   double pi_approx;
 
@@ -139,11 +166,23 @@ int main(int argc, char* argv[]) {
 
   /* [TODO] This is not a true parallel version; the master does
      everything */
-  if (0 == my_rank) {
-    inside = generate_points(npoints);
-    pi_approx = 4.0 * inside / (double)npoints;
-    printf("PI approximation is %f (true value=%f, rel error=%.3f%%)\n",
-           pi_approx, M_PI, 100.0 * fabs(pi_approx - M_PI) / M_PI);
+  generate_points_function_t generate_points_functions[] = {
+      mpi_generate_points_naive,
+  };
+  const size_t generate_points_n =
+      sizeof(generate_points_functions) / sizeof(generate_points_function_t);
+  for (size_t i = 0; i < generate_points_n; i++) {
+    if (my_rank == MASTER_RANK) {
+      puts("=== START ===");
+      printf("Generating %u points...\n", npoints);
+    }
+    inside = generate_points_functions[i](npoints);
+    if (my_rank == MASTER_RANK) {
+      pi_approx = 4.0 * inside / (double)npoints;
+      printf("PI approximation is %f (true value=%f, rel error=%.3f%%)\n",
+             pi_approx, M_PI, 100.0 * fabs(pi_approx - M_PI) / M_PI);
+      puts("=== END ===");
+    }
   }
 
   MPI_Finalize();
