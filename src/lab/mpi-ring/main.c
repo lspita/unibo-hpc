@@ -110,10 +110,11 @@ int main(int argc, char* argv[]) {
         break;
     }
   }
-  MPI_Finalize();
 
   if (my_rank == 0) {
     printf("Final value: %d\n", value);
   }
+
+  MPI_Finalize();
   return EXIT_SUCCESS;
 }
