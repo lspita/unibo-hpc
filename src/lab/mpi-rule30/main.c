@@ -163,6 +163,9 @@ The output is stored into a file `rule30.pbm`
 #include <stdio.h>
 #include <stdlib.h>
 
+#define ASCENDING_ORDER_TAG 0
+#define DESCENDING_ORDER_TAG 1
+
 /* Note: the MPI datatype corresponding to "signed char" is MPI_CHAR */
 typedef signed char cell_t;
 
@@ -245,7 +248,7 @@ int main(int argc, char* argv[]) {
   /* `cur` is the memory buffer containint `width` elements; this is
      the full state of the CA. */
   cell_t *cur = NULL, *tmp;
-  cell_t* next = NULL; /* This is not required by the parallel version */
+  // cell_t* next = NULL; /* This is not required by the parallel version */
   int my_rank, comm_sz;
 
   MPI_Init(&argc, &argv);
@@ -279,7 +282,8 @@ int main(int argc, char* argv[]) {
 
   /* The master creates the output file */
   if (0 == my_rank) {
-    out = fopen(outname, "w");
+    // out = fopen(outname, "w");
+    out = stdout;
     if (!out) {
       fprintf(stderr, "FATAL: Cannot create %s\n", outname);
       MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
@@ -299,37 +303,33 @@ int main(int argc, char* argv[]) {
     assert(cur != NULL);
     /* Note: the parallel version does not need the `next`
        array. */
-    next = (cell_t*)malloc(ext_width * sizeof(*next));
-    assert(next != NULL);
+    // next = (cell_t*)malloc(ext_width * sizeof(*next));
+    // assert(next != NULL);
     init_domain(cur, ext_width);
   }
 
   /* Compute the rank of the next and previous processes. These will
      be used to exchange the boundary. */
-  /*
-  const int rank_next = ...
-  const int rank_prev = ...
-  */
+  const int rank_next = (my_rank + 1) % comm_sz;
+  const int rank_prev = (my_rank - 1 + comm_sz) % comm_sz;
 
   /* compute the size of each local domain; this should be set to
      `width / comm_sz + 2*HALO`, since it must include the ghost
      cells */
-  /*
-    const int local_width = ...
-    const int local_ext_width = ...
-  */
+  const int local_width = width / comm_sz;
+  const int local_ext_width = local_width + (2 * HALO);
 
   /* `local_cur` and `local_next` are the local domains; they both
      have `local_ext_width` elements each */
-  /*
-    cell_t *local_cur = ...
-    cell_t *local_next = ...
-  */
+  cell_t* local_cur = (cell_t*)malloc(local_ext_width * sizeof(*local_cur));
+  assert(local_cur != NULL);
+  cell_t* local_next = (cell_t*)malloc(local_ext_width * sizeof(*local_next));
+  assert(local_next != NULL);
 
   const int LEFT_GHOST = 0;
   const int LEFT = LEFT_GHOST + HALO;
-  const int RIGHT = ext_width - 1 - HALO;
-  const int RIGHT_GHOST = RIGHT + HALO;
+  // const int RIGHT = ext_width - 1 - HALO;
+  // const int RIGHT_GHOST = RIGHT + HALO;
 
   /* The master distributes `cur[]` to the other MPI processes. Each
      process receives `width/comm_sz` elements of type
@@ -355,22 +355,20 @@ int main(int argc, char* argv[]) {
                  | LOCAL_LEFT
                  LOCAL_LEFT_GHOST
   */
-  /*
-    const int LOCAL_LEFT_GHOST = ...
-    const int LOCAL_LEFT = ...
-    const int LOCAL_RIGHT = ...
-    const int LOCAL_RIGHT_GHOST = ...
+  const int LOCAL_LEFT_GHOST = LEFT_GHOST;
+  const int LOCAL_LEFT = LOCAL_LEFT_GHOST + HALO;
+  const int LOCAL_RIGHT = local_ext_width - HALO - 1;
+  const int LOCAL_RIGHT_GHOST = LOCAL_RIGHT + HALO;
 
-    MPI_Scatter( sendbuf,
-                 sendcount,
-                 datatype,
-                 recvbuf,
-                 recvcount,
-                 datatype,
-                 root,
-                 MPI_COMM_WORLD
-    );
-  */
+  MPI_Scatter(&cur[LEFT],              // sendbuf
+              local_width,             // sendcount
+              MPI_CHAR,                // sendtype
+              &local_cur[LOCAL_LEFT],  // recvbuf
+              local_width,             // recvcount
+              MPI_CHAR,                // recvtype
+              0,                       // root
+              MPI_COMM_WORLD           // comm
+  );
 
   for (int s = 0; s < nsteps; s++) {
     /* This is OK; the master dumps the current state of the automaton */
@@ -390,21 +388,19 @@ int main(int argc, char* argv[]) {
                        local_cur[]
 
     */
-    /*
-    MPI_Sendrecv( sendbuf,
-                  sendcount,
-                  datatype,
-                  dest,
-                  sendtag,
-                  recvbuf,
-                  recvcount,
-                  datatype,
-                  source,
-                  recvtag,
-                  MPI_COMM_WORLD,
-                  MPI_STATUS_IGNORE
-                  );
-    */
+    MPI_Sendrecv(&local_cur[LOCAL_RIGHT],       // sendbuf
+                 HALO,                          // sendcount
+                 MPI_CHAR,                      // sendtype
+                 rank_next,                     // dest
+                 ASCENDING_ORDER_TAG,           // sendtag
+                 &local_cur[LOCAL_LEFT_GHOST],  // recvbuf
+                 HALO,                          // recvcount
+                 MPI_CHAR,                      // recvtype
+                 rank_prev,                     // source
+                 ASCENDING_ORDER_TAG,           // recvtag
+                 MPI_COMM_WORLD,                // comm
+                 MPI_STATUS_IGNORE              // status
+    );
 
     /* send left boundary to left neighbor; receive right boundary
        from right neighbor
@@ -416,29 +412,30 @@ int main(int argc, char* argv[]) {
        ...---+-+     +-+--------+-+     +-+---...
                        local_cur
     */
-    /*
-    MPI_Sendrecv( sendbuf,
-                  sendcount,
-                  datatype,
-                  dest,
-                  sendtag,
-                  recvbuf,
-                  recvcount,
-                  datatype,
-                  source,
-                  recvtag,
-                  MPI_COMM_WORLD,
-                  MPI_STATUS_IGNORE
-                  );
-    */
+    MPI_Sendrecv(&local_cur[LOCAL_LEFT],         // sendbuf
+                 HALO,                           // sendcount
+                 MPI_CHAR,                       // sendtype
+                 rank_prev,                      // dest
+                 DESCENDING_ORDER_TAG,           // sendtag
+                 &local_cur[LOCAL_RIGHT_GHOST],  // recvbuf
+                 HALO,                           // recvcount
+                 MPI_CHAR,                       // recvtype
+                 rank_next,                      // source
+                 DESCENDING_ORDER_TAG,           // recvtag
+                 MPI_COMM_WORLD,                 // comm
+                 MPI_STATUS_IGNORE               // status
+    );
 
     /* [TODO] in the parallel version, all processes must execute
        the "step()" function on ther local domains */
+    /*
     if (0 == my_rank) {
       cur[LEFT_GHOST] = cur[RIGHT];
       cur[RIGHT_GHOST] = cur[LEFT];
       step(cur, next, ext_width);
     }
+    */
+    step(local_cur, local_next, local_ext_width);
 
     /* Gather the updated local domains at the root; it is
        possible to gather the result at `cur[]` instead of
@@ -463,32 +460,37 @@ int main(int argc, char* argv[]) {
                | LOCAL_LEFT
                LOCAL_LEFT_GHOST
     */
-    /*
-    MPI_Gather( sendbuf,
-                sendcount,
-                datatype,
-                recvbuf,
-                recvcount,
-                datatype,
-                root,
-                MPI_COMM_WORLD
-                );
-    */
+    MPI_Gather(&local_next[LOCAL_LEFT],  // sendbuf
+               local_width,              // sendcount
+               MPI_CHAR,                 // sendtype
+               &cur[LEFT],               // recvbuf
+               local_width,              // recvcount
+               MPI_CHAR,                 // recvtype
+               0,                        // root
+               MPI_COMM_WORLD            // comm
+    );
 
     /* swap current and next domain */
     /*
       [TODO] replace so that all processes swap local_cur and local_next
      */
+    /*
     if (0 == my_rank) {
       tmp = cur;
       cur = next;
       next = tmp;
     }
+    */
+    tmp = local_cur;
+    local_cur = local_next;
+    local_next = tmp;
   }
 
   /* All done, free memory */
-  free(next);
+  // free(next);
   free(cur);
+  free(local_cur);
+  free(local_next);
 
   if (0 == my_rank) {
     fclose(out);
