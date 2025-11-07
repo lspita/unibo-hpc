@@ -358,7 +358,7 @@ int main(int argc, char* argv[]) {
   const int LOCAL_LEFT_GHOST = LEFT_GHOST;
   const int LOCAL_LEFT = LOCAL_LEFT_GHOST + HALO;
   const int LOCAL_RIGHT = local_ext_width - HALO - 1;
-  const int LOCAL_RIGHT_GHOST = LOCAL_RIGHT + HALO;
+  const int LOCAL_RIGHT_GHOST = LOCAL_RIGHT + 1;
 
   MPI_Scatter(&cur[LEFT],              // sendbuf
               local_width,             // sendcount
