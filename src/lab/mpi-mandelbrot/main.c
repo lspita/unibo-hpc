@@ -202,13 +202,54 @@ int main(int argc, char* argv[]) {
     /* Allocate the complete bitmap */
     bitmap = (pixel_t*)malloc(xsize * ysize * sizeof(*bitmap));
     assert(bitmap != NULL);
-    /* [TODO] This is not a true parallel version, since the master
-       does everything */
-    draw_lines(0, ysize, bitmap, xsize, ysize);
+  }
+  /* This version makes use of MPI_Gatherv to collect portions of
+     different sizes. To compile this version, use:
+
+     mpicc -std=c99 -Wall -Wpedantic -DUSE_GATHERV mpi-mandelbrot.c -o
+     mpi-mandelbrot
+
+  */
+  int ystart[comm_sz], yend[comm_sz], counts[comm_sz], displs[comm_sz];
+  for (int i = 0; i < comm_sz; i++) {
+    ystart[i] = ysize * i / comm_sz;
+    yend[i] = ysize * (i + 1) / comm_sz;
+    /* counts[] and displs[] must be measured as the number of
+       "array elements", NOT bytes; however, in this case the type
+       of array elements that are gathered together is MPI_BYTE
+       (see MPI_Gatherv below), so we need to multiply by
+       sizeof(pixel_t) */
+    counts[i] = (yend[i] - ystart[i]) * xsize * sizeof(pixel_t);
+    displs[i] = ystart[i] * xsize * sizeof(pixel_t);
+  }
+
+  pixel_t* local_bitmap = (pixel_t*)malloc(counts[my_rank]);
+  assert(local_bitmap != NULL);
+
+  const double tstart = MPI_Wtime();
+
+  draw_lines(ystart[my_rank], yend[my_rank], local_bitmap, xsize, ysize);
+
+  MPI_Gatherv(local_bitmap,    /* sendbuf      */
+              counts[my_rank], /* sendcount    */
+              MPI_BYTE,        /* datatype     */
+              bitmap,          /* recvbuf      */
+              counts,          /* recvcounts[] */
+              displs,          /* displacements[] */
+              MPI_BYTE,        /* datatype     */
+              0,               /* root         */
+              MPI_COMM_WORLD);
+
+  const double elapsed = MPI_Wtime() - tstart;
+
+  if (0 == my_rank) {
     fwrite(bitmap, sizeof(*bitmap), xsize * ysize, out);
     fclose(out);
-    free(bitmap);
+
+    printf("Execution time %.3f\n", elapsed);
   }
+  free(bitmap);
+  free(local_bitmap);
 
   MPI_Finalize();
 
