@@ -120,20 +120,23 @@ int cat_map_rectime(int n) {
     }
   }
 
-  // custom reduction
-  int n1 = total_pixels;
-  int n2;
-  do {
-    n2 = (n1 + 1) / 2;
-    // slower when parallelized ????
-    // #pragma omp parallel for default(none) shared(n1, n2, recurrences)
-    for (int i = 0; i < n2; i++) {
-      if (i + n2 < n1) {
-        recurrences[i] = lcm(recurrences[i], recurrences[i + n2]);
+// custom reduction
+// slower when parallelized ????
+#pragma omp parallel default(none) shared(recurrences, total_pixels)
+  {
+    int n1 = total_pixels;
+    int n2;
+    do {
+      n2 = (n1 + 1) / 2;
+#pragma omp for
+      for (int i = 0; i < n2; i++) {
+        if (i + n2 < n1) {
+          recurrences[i] = lcm(recurrences[i], recurrences[i + n2]);
+        }
       }
-    }
-    n1 = n2;
-  } while (n2 > 1);
+      n1 = n2;
+    } while (n2 > 1);
+  }
 
   const int total_lcm = recurrences[0];
   free(recurrences);
