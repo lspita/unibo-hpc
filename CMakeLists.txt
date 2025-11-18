@@ -141,7 +141,7 @@ function(make_executable outexe outid outpath filepath)
     get_filename_component(filename "${filepath}" NAME)
     get_filename_component(exename "${filepath}" NAME_WLE)
     get_filename_component(exedir "${filepath}" DIRECTORY)
-    
+
     src_path(exepath "${exedir}/${exename}")
     string(REPLACE "/" "_" exeid "${exepath}")
 
