@@ -104,11 +104,17 @@ Example:
 
 #include <HPC2526/hpc.h>
 #include <assert.h>
+#include <cuda_runtime_api.h>
+#include <driver_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <cstddef>
+
+#define BLKDIM 1024
+
 /* if *a > *b, swap them. Otherwise do nothing */
-void cmp_and_swap(int* a, int* b) {
+__device__ void cmp_and_swap(int* a, int* b) {
   if (*a > *b) {
     int tmp = *a;
     *a = *b;
@@ -116,21 +122,27 @@ void cmp_and_swap(int* a, int* b) {
   }
 }
 
-/* Odd-even transposition sort */
-void odd_even_sort(int* v, int n) {
-  for (int phase = 0; phase < n; phase++) {
-    if (phase % 2 == 0) {
-      /* (even, odd) comparisons */
-      for (int i = 0; i < n - 1; i += 2) {
-        cmp_and_swap(&v[i], &v[i + 1]);
-      }
-    } else {
-      /* (odd, even) comparisons */
-      for (int i = 1; i < n - 1; i += 2) {
-        cmp_and_swap(&v[i], &v[i + 1]);
-      }
-    }
+__global__ void cmp_and_swap_kernel(int* v, int n, int phase) {
+  const int thread_id = (blockIdx.x * blockDim.x) + threadIdx.x;
+  const int i = (thread_id * 2) + (phase % 2);
+  if (i < n - 1) {
+    cmp_and_swap(&v[i], &v[i + 1]);
   }
+}
+
+void cuda_odd_even_sort(int* v, int n) {
+  int* d_v;
+  const size_t size = n * sizeof(*d_v);
+  const size_t n_blocks = ((n / 2) + BLKDIM - 1) / BLKDIM;
+
+  cudaSafeCall(cudaMalloc(&d_v, size));
+  cudaSafeCall(cudaMemcpy(d_v, v, size, cudaMemcpyHostToDevice));
+  for (int phase = 0; phase < n; phase++) {
+    cmp_and_swap_kernel<<<n_blocks, BLKDIM>>>(d_v, n, phase);
+    cudaCheckError();  // device sync
+  }
+  cudaSafeCall(cudaMemcpy(v, d_v, size, cudaMemcpyDeviceToHost));
+  cudaSafeCall(cudaFree(d_v));
 }
 
 /**
@@ -195,7 +207,7 @@ int main(int argc, char* argv[]) {
   fill(x, n);
 
   tstart = hpc_gettime();
-  odd_even_sort(x, n);
+  cuda_odd_even_sort(x, n);
   elapsed = hpc_gettime() - tstart;
   printf("Sorted %d elements in %f seconds\n", n, elapsed);
 
