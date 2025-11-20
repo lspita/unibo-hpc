@@ -49,9 +49,10 @@
               cudaPackages.cuda_cudart
             ];
             shellHook = ''
-              export MANPATH="''${MANPATH:+$MANPATH:}${mpi.man}/share/man"
               set -a
               source .env 2> /dev/null
+              MANPATH=${mpi.man}/share/man:$MANPATH
+              PATH=$(realpath ./scripts):$PATH
               set +a
             '';
           };
