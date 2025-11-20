@@ -100,7 +100,8 @@ Example:
 - [hpc.h](hpc.h)
 
 ***/
-#include "hpc.h"
+// #include "hpc.h"
+#include "../../HPC2526/hpc.h"
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>

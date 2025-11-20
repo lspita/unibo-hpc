@@ -106,7 +106,8 @@ Example:
 #include <stdlib.h>
 #include <assert.h>
 
-#include "hpc.h"
+// #include "hpc.h"
+#include "../../HPC2526/hpc.h"
 
 /* if *a > *b, swap them. Otherwise do nothing */
 __host__ __device__
