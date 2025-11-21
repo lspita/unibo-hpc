@@ -19,6 +19,8 @@ set_default(CMAKE_BUILD_TYPE Debug)
 
 include("${CMAKE_DIR}/setup.cmake")
 
+set(SOURCES_EXTENSIONS)
+
 function(get_arg index outvar default)
     list(LENGTH ARGN n)
     if (n GREATER ${index})
@@ -90,7 +92,6 @@ endfunction()
 project("${PROJECT_NAME}")
 get_property(PROJECT_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 
-set(SOURCES_EXTENSIONS)
 foreach(lang IN LISTS PROJECT_LANGUAGES)
     list(APPEND SOURCES_EXTENSIONS ${CMAKE_${lang}_SOURCE_FILE_EXTENSIONS})
 endforeach()
@@ -113,7 +114,7 @@ find_sources(TEST_SOURCES ${SRC_DIR_ABS} ${TEST_PATTERNS})
 list(APPEND PROJECT_SOURCES ${SRC_SOURCES})
 
 # create lib
-set(PROJECT_LIB "${PROJECT_NAME}-lib")
+set(PROJECT_LIB ${PROJECT_NAME})
 set(LIB_DIR_EXISTS false)
 if (EXISTS "${LIB_DIR_ABS}")
     check_isdir("${LIB_DIR_ABS}")
@@ -122,8 +123,8 @@ if (EXISTS "${LIB_DIR_ABS}")
     list(APPEND PROJECT_SOURCES ${LIB_SOURCES})
 endif()
 
-list(LENGTH PROJECT_SOURCES cxx_sources_len)
-if (cxx_sources_len GREATER 0)
+list(LENGTH PROJECT_SOURCES project_sources_len)
+if (project_sources_len GREATER 0)
     add_library("${PROJECT_LIB}" STATIC ${PROJECT_SOURCES})
     target_include_directories("${PROJECT_LIB}" PRIVATE "${SRC_DIR_ABS}")
 else()
