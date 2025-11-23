@@ -177,6 +177,10 @@ The output is stored to the file `cuda-rule30.pbm`
 
 typedef unsigned char cell_t;
 
+__global__ void step_kernel(cell_t* const cur, cell_t* const next) {
+  const size_t thread_id = (blockIdx.x * blockDim.x) + threadIdx.x;
+}
+
 /**
  * Given the current state of the CA, compute the next state.  This
  * version requires that the `cur` and `next` arrays are extended with

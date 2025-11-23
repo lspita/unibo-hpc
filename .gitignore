@@ -10,3 +10,6 @@
 /.clang-tidy
 /.clang-format
 /Makefile
+
+# out images
+*.pbm
