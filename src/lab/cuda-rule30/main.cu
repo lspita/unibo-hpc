@@ -172,13 +172,24 @@ The output is stored to the file `cuda-rule30.pbm`
  ***/
 #include <HPC2526/hpc.h>
 #include <assert.h>
+#include <cuda_runtime_api.h>
+#include <driver_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <cstdio>
+
+#define BLKDIM 1024
+#define RADIUS 1
+
 typedef unsigned char cell_t;
 
-__global__ void step_kernel(cell_t* const cur, cell_t* const next) {
-  const size_t thread_id = (blockIdx.x * blockDim.x) + threadIdx.x;
+__device__ __host__ cell_t calculate_cell(cell_t* const cur, const int i) {
+  const cell_t left = cur[i - 1];
+  const cell_t center = cur[i];
+  const cell_t right = cur[i + 1];
+  return (left && !center && !right) || (!left && !center && right) ||
+         (!left && center && !right) || (!left && center && right);
 }
 
 /**
@@ -199,12 +210,44 @@ void step(cell_t* cur, cell_t* next, int ext_n) {
   const int LEFT = 1;
   const int RIGHT = ext_n - 2;
   for (int i = LEFT; i <= RIGHT; i++) {
-    const cell_t left = cur[i - 1];
-    const cell_t center = cur[i];
-    const cell_t right = cur[i + 1];
-    next[i] = (left && !center && !right) || (!left && !center && right) ||
-              (!left && center && !right) || (!left && center && right);
+    next[i] = calculate_cell(cur, i);
   }
+}
+
+__global__ void step_kernel(cell_t* const cur, cell_t* const next,
+                            const int left, const int right) {
+  const int thread_idx = threadIdx.x;
+  const int global_idx = (blockIdx.x * blockDim.x) + thread_idx;
+  if (global_idx < left || global_idx > right) {
+    return;
+  }
+  __shared__ cell_t buffer[BLKDIM + (2 * RADIUS)];
+  const int buffer_idx = thread_idx + RADIUS;
+  buffer[buffer_idx] = cur[global_idx];
+  if (thread_idx < RADIUS) {
+    // first RADIUS threads also copy the ghost area
+    const int block_size = blockDim.x;
+    buffer[buffer_idx - RADIUS] = cur[global_idx - RADIUS];
+    buffer[buffer_idx + block_size] = cur[global_idx + block_size];
+  }
+  __syncthreads();
+  next[global_idx] = calculate_cell(buffer, buffer_idx);
+}
+
+void cuda_step(cell_t* cur, cell_t* next, int ext_n) {
+  const int LEFT = 1;
+  const int RIGHT = ext_n - 2;
+  cell_t* d_cur;
+  cell_t* d_next;
+  const int size = ext_n * sizeof(*d_cur);
+  cudaSafeCall(cudaMalloc(&d_cur, size));
+  cudaSafeCall(cudaMalloc(&d_next, size));
+  cudaSafeCall(cudaMemcpy(d_cur, cur, size, cudaMemcpyHostToDevice));
+  step_kernel<<<(ext_n + BLKDIM - 1) / BLKDIM, BLKDIM>>>(d_cur, d_next, LEFT,
+                                                         RIGHT);
+  cudaSafeCall(cudaMemcpy(next, d_next, size, cudaMemcpyDeviceToHost));
+  cudaSafeCall(cudaFree(d_cur));
+  cudaSafeCall(cudaFree(d_next));
 }
 
 /**
@@ -276,6 +319,7 @@ int main(int argc, char* argv[]) {
   /* Initialize the domain */
   init_domain(cur, ext_width);
 
+  double tstart = hpc_gettime();
   /* Evolve the CA */
   for (int s = 0; s < steps; s++) {
     /* Dump the current state */
@@ -286,13 +330,15 @@ int main(int argc, char* argv[]) {
     cur[LEFT_GHOST] = cur[RIGHT];
 
     /* Compute next state */
-    step(cur, next, ext_width);
+    cuda_step(cur, next, ext_width);
 
     /* swap cur and next */
     cell_t* tmp = cur;
     cur = next;
     next = tmp;
   }
+  double elapsed = hpc_gettime() - tstart;
+  printf("Computed %dx%d in %f seconds\n", width, steps, elapsed);
 
   free(cur);
   free(next);
